@@ -1,6 +1,6 @@
 CFLAGS = -I../lib
 
-ALL =  spew-sdif merge-sdif streamlist copy-sdif change-streamID
+ALL =  spew-sdif merge-sdif streamlist copy-sdif change-streamID fix-frame-size
 
 all: $(ALL)
 
@@ -19,8 +19,15 @@ spew-sdif: sdif.o spew-sdif.o
 change-streamID: sdif.o change-streamID.o
 	cc $(CFLAGS) -o change-streamID change-streamID.o sdif.o
 
+fix-frame-size:  fix-frame-size.o sdif.o sdif-mem.o
+	cc $(CFLAGS) -o fix-frame-size fix-frame-size.o sdif.o sdif-mem.o
+
+
 sdif.o: ../lib/sdif.c ../lib/sdif.h
 	cc $(CFLAGS) -c ../lib/sdif.c
+
+sdif-mem.o: ../lib/sdif-mem.c ../lib/sdif-mem.h
+	cc $(CFLAGS) -c ../lib/sdif-mem.c
 
 spew-sdif.o: spew-sdif.c ../lib/sdif.h
 	cc $(CFLAGS) -c spew-sdif.c
