@@ -113,6 +113,7 @@ static char *error_string_array[] = {
     "Frame already exists",
     "Requested operation failed",
     "Unknown error",
+    "Requested Stream ID not found",
     "Illegal error code"
 };
 
@@ -722,24 +723,26 @@ SDIFresult SkipBytes(FILE *f, int bytesToSkip) {
 #ifdef STREAMING
     /* Can't fseek in a stream, so waste some time needlessly copying
        some bytes in memory */
-    {
 #define BLOCK_SIZE 1024
-	char buf[BLOCK_SIZE];
-	while (bytesToSkip > BLOCK_SIZE) {
-	    if (fread (buf, BLOCK_SIZE, 1, f) != 1) {
-		return ESDIF_READ_FAILED;
-	    }
-	    bytesToSkip -= BLOCK_SIZE;
-	}
 
-	if (fread (buf, bytesToSkip, 1, f) != 1) {
-	    return ESDIF_READ_FAILED;
-	}
+    {
+		char buf[BLOCK_SIZE];
+		while (bytesToSkip > BLOCK_SIZE) {
+		    if (fread (buf, BLOCK_SIZE, 1, f) != 1) {
+			return ESDIF_READ_FAILED;
+		    }
+		    bytesToSkip -= BLOCK_SIZE;
+		}
+		
+
+		if (fread (buf, bytesToSkip, 1, f) != 1) {
+		    return ESDIF_READ_FAILED;
+		}
     }
 #else
     /* More efficient implementation */
     if (fseek(f, bytesToSkip, SEEK_CUR) != 0) {
-	return ESDIF_SKIP_FAILED;
+	    return ESDIF_SKIP_FAILED;
     }
 #endif
    return ESDIF_SUCCESS;

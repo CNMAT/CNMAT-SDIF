@@ -152,6 +152,7 @@ typedef enum {
     ESDIF_FRAME_ALREADY_EXISTS=19,
     ESDIF_OPERATION_FAILED=20,
     ESDIF_OTHER=21,
+    ESDIF_STREAM_NOT_FOUND=22,
     ESDIF_END_OF_SDIF_VALUES  /* Insert additional error values before here */
 } SDIFresult;
 

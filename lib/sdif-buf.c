@@ -1019,7 +1019,6 @@ SDIFresult SDIFbuf_ReadStream(SDIFbuf_Buffer b,
   return SDIFbuf_ReadStreamFromOpenFile(b, f, mode, arg);
 }
 
-
 SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b, 
 					  FILE *f, 
 					  SDIFwhichStreamMode mode, 
@@ -1032,14 +1031,14 @@ SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b,
   sdif_int32 streamID;
   
   SDIFbuf_BufferFriends bp = b->internal;
-
+   
   //  deal with stream select mode
   if (mode == ESDIF_WHICH_STREAM_NUMBER) 
     streamID = arg;
   else
     //  unrecognized mode
     return ESDIF_BAD_PARAM;
-  
+    
   //  if there already was data in current buffer instance, free it
   SDIFbuf_Clear(b);
 
@@ -1047,42 +1046,46 @@ SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b,
 
   //  loop to read entire file
   while((r = SDIF_ReadFrameHeader(&fh, f)) == ESDIF_SUCCESS) {
-  
     if (fh.streamID == streamID)  {
-      //  we want this frame
-      if (r = SDIFmem_ReadFrameContents(&fh, f, &current)) 
-      {
+      //  we want this frame      
+      if ((r = SDIFmem_ReadFrameContents(&fh, f, &current)) != ESDIF_SUCCESS) {
         SDIF_CloseRead(f);
-        return ESDIF_READ_FAILED;
+        return r;
       }
       
       current->prev = previous;
       current->next = NULL;
       
-      if(first == NULL)
+      if (first == NULL) {
         first = current;
-      else
+      } else {
         previous->next = current;
-      previous = current;
-    } else {      
-    //  skip this frame
-      if(r = SDIF_SkipFrame(&fh, f)) {
-        SDIF_CloseRead(f);
-        return ESDIF_READ_FAILED;
       }
-    }
-  }
+      previous = current;
+    } else {
+		//  skip this frame
+		if ((r = SDIF_SkipFrame(&fh, f)) != ESDIF_SUCCESS) {
+			SDIF_CloseRead(f);
+			return r;
+		}
+     }
+   }
 
   //  make sure we ended with normal EOF
-  if (r != ESDIF_END_OF_DATA) 
-  {
+  if (r != ESDIF_END_OF_DATA) {
     SDIF_CloseRead(f);
-    return ESDIF_READ_FAILED;
+    return r;
   }
 
   //  close file  
   r = SDIF_CloseRead(f);
 
+  // Make sure we got at least one frame from the desired stream
+  if (first == NULL) {
+  	return ESDIF_STREAM_NOT_FOUND;
+  }
+
+  // Update pointers and state
   bp->head = first;
   bp->tail = current;
   bp->streamID = first->header.streamID;
