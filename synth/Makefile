@@ -9,7 +9,7 @@ all: $(ALL)
 
 
 TASS: TASS.o sdif.o sdif-mem.o sdif-types.o sdif-sinusoids.o
-	cc $(CFLAGS) -o TASS TASS.o sdif.o sdif-mem.o sdif-types.o sdif-sinusoids.o -lm
+	cc $(CFLAGS) -o TASS TASS.o sdif.o sdif-mem.o sdif-types.o sdif-sinusoids.o -lm -lmx
 
 sdif.o: ../lib/sdif.c ../lib/sdif.h
 	cc $(CFLAGS) -c ../lib/sdif.c
