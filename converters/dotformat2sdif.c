@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "sdif.h"
 #include "readformat.h"
 
@@ -42,7 +43,7 @@ Boolean ConvertFormat(char *filename, formatType t);
 
 #define MAX_NUM_FILES 1000
 
-int main(int argc, char *argv[]) {
+void main(int argc, char *argv[]) {
   int i, numFiles;
   char *files[MAX_NUM_FILES];
   formatType types[MAX_NUM_FILES];
@@ -79,7 +80,7 @@ int main(int argc, char *argv[]) {
 
   for (i = 0; i < numFiles; i++) {
     if (ConvertFormat(files[i], types[i]) && settings.delete) {
-      printf("*** Would delete %s\n", files[i]);
+	unlink(files[i]);
     }
   }
 }
@@ -92,9 +93,9 @@ Boolean ConvertFormat(char *filename, formatType t) {
   char outfilename[1000], *extension;
   float time;
   int numTracks, i;
-  struct SDIFFrameHeader head;
-  MatrixHeader matrixHeader;
-  RowOf1TRC trackData;
+  SDIF_FrameHeader head;
+  SDIF_MatrixHeader SDIF_MatrixHeader;
+  SDIF_RowOf1TRC trackData;
 
   if ((in = OpenEitherFormat(filename, t)) == NULL) return FALSE;
 
@@ -102,7 +103,7 @@ Boolean ConvertFormat(char *filename, formatType t) {
   extension = strrchr(outfilename, '.');
   strcpy(extension, ".sdif");
 
-  out = OpenSDIFWrite(outfilename);
+  out = SDIF_OpenWrite(outfilename);
   if (out == NULL) {
     fprintf(stderr, "Couldn't open \"%s\" for writing; skipping.\n",
 	    outfilename);
@@ -110,26 +111,26 @@ Boolean ConvertFormat(char *filename, formatType t) {
     return FALSE;
   }
 
-  Copy4Bytes(head.frameType, "1TRC");
-  head.streamID = GenUniqueSDIFFrameID();
+  SDIF_Copy4Bytes(head.frameType, "1TRC");
+  head.streamID = SDIF_UniqueStreamID();
 
   while(ReadFrameHeader(in,&numTracks, &time) != EOF) {
-    head.time = (float64) time;
+    head.time = (sdif_float64) time;
     head.size = SizeOf1TRCFrame(numTracks);
     head.matrixCount = 1;
 
-    if (WriteSDIFFrameHeader(&head, out) != 1) {
+    if (SDIF_WriteFrameHeader(&head, out) != 1) {
       fprintf (stderr,"Error writing frame header\n");
       goto writeerror;
     }
 
 
-    Copy4Bytes(matrixHeader.matrixType, "1TRC");
-    matrixHeader.matrixDataType = SDIF_FLOAT32;
-    matrixHeader.rowCount = numTracks;
-    matrixHeader.columnCount = 4;
+    SDIF_Copy4Bytes(SDIF_MatrixHeader.matrixType, "1TRC");
+    SDIF_MatrixHeader.matrixDataType = SDIF_FLOAT32;
+    SDIF_MatrixHeader.rowCount = numTracks;
+    SDIF_MatrixHeader.columnCount = 4;
 
-    if (WriteMatrixHeader(&matrixHeader, out) != 1) {
+    if (SDIF_WriteMatrixHeader(&SDIF_MatrixHeader, out) != 1) {
       fprintf (stderr,"Error writing matrix\n");
       goto writeerror;
     }
@@ -138,7 +139,7 @@ Boolean ConvertFormat(char *filename, formatType t) {
       ReadTrack(in, &trackData.index, &trackData.freq, &trackData.phase,
 		&trackData.amp);
 
-      if (WriteRowOf1TRC(&trackData, out) != 1) {
+      if (SDIF_WriteRowOf1TRC(&trackData, out) != 1) {
 	fprintf (stderr,"Error writing 1TRC row\n");
 	goto writeerror;
       }
@@ -154,6 +155,6 @@ writeerror:
   }
 
   CloseEitherFormat(in);
-  CloseSDIFWrite(out);
+  SDIF_CloseWrite(out);
   return Finished;
 }
