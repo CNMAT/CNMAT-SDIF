@@ -123,8 +123,11 @@ typedef enum {
     ESDIF_END_OF_DATA=7,  /* Not necessarily an error */
     ESDIF_BAD_MATRIX_HEADER=8,
     ESDIF_OBSOLETE_FILE_VERSION=9,
-    ESDIF_WRITE_FAILED=10,
-    ESDIF_READ_FAILED=11
+    ESDIF_OBSOLETE_TYPES_VERSION=10,
+    ESDIF_WRITE_FAILED=11,
+    ESDIF_READ_FAILED=12,
+    ESDIF_OUT_OF_MEMORY=13,  /* Used only by sdif-mem.c */
+    ESDIF_DUPLICATE_MATRIX_TYPE_IN_FRAME=14
 } SDIFresult;
 
 
@@ -200,6 +203,9 @@ SDIFresult SDIF_Init();
    Returns the string representation of the given error code. */
 char *SDIF_GetErrorString(SDIFresult errorcode);
 
+
+/************* Opening and closing files *************/
+
 /* SDIF_OpenWrite -- 
    Opens "filename" for writing and writes the global SDIF header (but does
    not flush).  The resulting FILE* is written into *resultp. */
@@ -213,22 +219,22 @@ SDIFresult SDIF_BeginWrite(FILE *output);
 /* SDIF_CloseWrite -- */
 SDIFresult SDIF_CloseWrite(FILE *f);
 
-/* SDIF_OpenRead --
-   Opens "filename" for reading and reads and parses the header.  Sets the
-   error values available through the SDIF_GetLastError functions and returns
-   NULL if the header is wrong.  After calling this the file pointer will be
-   advanced to the beginning of the first frame. */
-
-FILE *SDIF_OpenRead(const char *filename);
+/* SDIF_OpenRead -- 
+   Opens "filename" for reading and reads and parses the header.  The return
+   value will indicate any problem in the header.  After calling this the file
+   pointer will be advanced to the beginning of the first frame. */
+SDIFresult SDIF_OpenRead(const char *filename, FILE **resultp);
 
 /* SDIF_BeginRead --
    Same as SDIF_OpenRead() except that it takes a FILE * already opened
    for binary reading. */
 SDIFresult SDIF_BeginRead(FILE *input);
 
-/* SDIF_CloseRead --
-   Returns the result of flcose() on "f". */
+/* SDIF_CloseRead -- */
 SDIFresult SDIF_CloseRead(FILE *f);
+
+
+/************* Global Header *************/
 
 /* SDIF_FillGlobalHeader --
    Writes "SDIF" into "h" and initializes the size and version members. */
@@ -236,17 +242,22 @@ void SDIF_FillGlobalHeader(SDIF_GlobalHeader *h);
 
 /* SDIF_WriteGlobalHeader --
    Writes "h" to "f". */
-SDIFresult SDIF_WriteGlobalHeader(SDIF_GlobalHeader *h, FILE *f);
+SDIFresult SDIF_WriteGlobalHeader(const SDIF_GlobalHeader *h, FILE *f);
+
+
+
+/************* Frames *************/
 
 /* SDIF_ReadFrameHeader --
-   Reads a frame header from "f" and writes it to "fh".
-   If you've reached the end of the file or stream, this will return
-   FAILURE and the error code will be ESDIF_END_OF_DATA. */
+   Reads a frame header from "f" and writes it to "fh".  If you've reached the
+   end of the file or stream (which is not an error), this will return
+   ESDIF_END_OF_DATA.
+ */
 SDIFresult SDIF_ReadFrameHeader(SDIF_FrameHeader *fh, FILE *f);
 
 /* SDIF_WriteFrameHeader --
-   Writes "fh" to "f".  Returns 1 on success. */
-SDIFresult SDIF_WriteFrameHeader(SDIF_FrameHeader *fh, FILE *f);
+   Writes "fh" to "f". */
+SDIFresult SDIF_WriteFrameHeader(const SDIF_FrameHeader *fh, FILE *f);
 
 /* SDIF_SkipFrame --
    Assuming that you just read an SDIF_FrameHeader and want to
@@ -256,27 +267,33 @@ SDIFresult SDIF_WriteFrameHeader(SDIF_FrameHeader *fh, FILE *f);
    SDIF_FrameHeader from the input.
 
    The arguments are a pointer to the SDIF_FrameHeader you just read
-   (which includes the size count) and the open FILE *.  Returns 1 if
-   successful; otherwise it sets the error string available through
-   the SDIF_GetLastError functions and returns != 1. */
-SDIFresult SDIF_SkipFrame(SDIF_FrameHeader *head, FILE *f);
+   (which includes the size count) and the open FILE *.  */
+SDIFresult SDIF_SkipFrame(const SDIF_FrameHeader *fh, FILE *f);
+
+
+/************* Matrices *************/
 
 /* SDIF_ReadMatrixHeader --
-   Fills "m" with the matrix header read from "f".  Returns 1 on success. */
+   Fills "m" with the matrix header read from "f". */
 SDIFresult SDIF_ReadMatrixHeader(SDIF_MatrixHeader *m, FILE *f);
 
 /* SDIF_WriteMatrixHeader --
-   Writes "m" to "f".  Returns 1 on success. */
-SDIFresult SDIF_WriteMatrixHeader(SDIF_MatrixHeader *m, FILE *f);
+   Writes "m" to "f". */
+SDIFresult SDIF_WriteMatrixHeader(const SDIF_MatrixHeader *m, FILE *f);
 
 /* SDIF_GetMatrixDataTypeSize --
-   Returns the size in bytes of the data type indicated by "d" */
-int SDIF_GetMatrixDataTypeSize(sdif_int32 d);
+   Find the size in bytes of the data type indicated by "d" */
+#define SDIF_GetMatrixDataTypeSize(d) ((d) & 0xff)
 
 /* SDIF_GetMatrixDataSize --
    Returns the size in bytes of the matrix described by the given 
    SDIF_MatrixHeader, including possible byte padding. */
-int SDIF_GetMatrixDataSize(SDIF_MatrixHeader *m);
+int SDIF_GetMatrixDataSize(const SDIF_MatrixHeader *m);
+
+/* SDIF_PaddingRequired --
+   Returns the number of padding bytes required after the matrix data
+   according to the given SDIF_MatrixHeader. */
+int SDIF_PaddingRequired(const SDIF_MatrixHeader *m);
 
 /* SDIF_SkipMatrix --
    Assuming that you just read an SDIF_MatrixHeader and want to ignore the
@@ -284,25 +301,31 @@ int SDIF_GetMatrixDataSize(SDIF_MatrixHeader *m);
    matrixType), call this procedure to skip over the matrix data.  It will leave
    the file pointer pointing at the next matrix after the one you skipped, 
    or pointing at the next frame header if the one we skipped was the last one
-   in the frame.  Returns 1 on success. */
-SDIFresult SDIF_SkipMatrix(SDIF_MatrixHeader *head, FILE *f);
+   in the frame.  */
+SDIFresult SDIF_SkipMatrix(const SDIF_MatrixHeader *head, FILE *f);
 
 /* SDIF_ReadMatrixData --
    Assuming that you just read an SDIF_MatrixHeader and want to read the
    matrix data itself into a block of memory that you've allocated, call
-   this procedure to do so.  Handles big/little endian issues. Returns 1 
-   on success. */
-SDIFresult SDIF_ReadMatrixData(void *putItHere, FILE *f, SDIF_MatrixHeader *head);
+   this procedure to do so.  Handles big/little endian issues.  */
+SDIFresult SDIF_ReadMatrixData(void *putItHere, FILE *f, 
+			       const SDIF_MatrixHeader *head);
+
+
+/************* Stream IDs *************/
 
 /* SDIF_UniqueStreamID --
-   Each call to this procedure returns a unique stream ID: 1, 2, 3... */
+   Each call to this procedure returns a locally unique stream ID: 1, 2, 3...
+   This procedure is not thread-safe. */
 sdif_int32 SDIF_UniqueStreamID(void);
 
 
-/* SDIF_Str4Eq --
+/************* 4-byte character arrays *************/
+
+/* SDIF_Char4Eq --
    Checks two 4-byte character arrays for equality.  Returns zero if they
    differ, nonzero if they're the same. */
-int SDIF_Str4Eq(const char *thisone, const char *thatone);
+int SDIF_Char4Eq(const char *thisone, const char *thatone);
 
 /* SDIF_Copy4Bytes --
    Copies 4 bytes (e.g., "SDIF") into a 4-byte char array. */
@@ -326,10 +349,10 @@ void SDIF_Copy4Bytes(char *target, const char *string);
     /* Insert other checks for your architecture here if it's little endian. */
 #endif
 
-SDIFresult SDIF_Write1(void *block, size_t n, FILE *f);
-SDIFresult SDIF_Write2(void *block, size_t n, FILE *f);
-SDIFresult SDIF_Write4(void *block, size_t n, FILE *f);
-SDIFresult SDIF_Write8(void *block, size_t n, FILE *f);
+SDIFresult SDIF_Write1(const void *block, size_t n, FILE *f);
+SDIFresult SDIF_Write2(const void *block, size_t n, FILE *f);
+SDIFresult SDIF_Write4(const void *block, size_t n, FILE *f);
+SDIFresult SDIF_Write8(const void *block, size_t n, FILE *f);
 
 SDIFresult SDIF_Read1(void *block, size_t n, FILE *f);
 SDIFresult SDIF_Read2(void *block, size_t n, FILE *f);
