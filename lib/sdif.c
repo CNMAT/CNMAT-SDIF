@@ -1,12 +1,31 @@
 /*
- * Copyright (c) 1997,1998, 1999 Regents of the University of California.
- * All rights reserved.
- * The name of the University may not be used to endorse or promote
- * products derived from this software without specific prior written
- * permission.  THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE
- * IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE.
+Copyright (c) 1996. 1997, 1998, 1999.  The Regents of the University of California
+(Regents). All Rights Reserved.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for educational, research, and not-for-profit purposes,
+without fee and without a signed licensing agreement, is hereby granted,
+provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and distributions.
+Contact The Office of Technology Licensing, UC Berkeley, 2150 Shattuck
+Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for commercial
+licensing opportunities.
+
+Written by Matt Wright, Amar Chaudhary, and Sami Khoury, The Center for New
+Music and Audio Technologies, University of California, Berkeley.
+
+     IN NO EVENT SHALL REGENTS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
+     SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST
+     PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS
+     DOCUMENTATION, EVEN IF REGENTS HAS BEEN ADVISED OF THE POSSIBILITY OF
+     SUCH DAMAGE.
+
+     REGENTS SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT
+     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+     FOR A PARTICULAR PURPOSE. THE SOFTWARE AND ACCOMPANYING
+     DOCUMENTATION, IF ANY, PROVIDED HEREUNDER IS PROVIDED "AS IS".
+     REGENTS HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+     ENHANCEMENTS, OR MODIFICATIONS.
 
   sdif.c
 
@@ -44,6 +63,7 @@
  9/20/99 version 2.2 by Matt: Incorporating changes to the format
     from my 6/99 visit to IRCAM.  Moved memory stuff to sdif-mem.[ch].
 
+ 10/1/99 version 2.3 by Matt: minor fixes for public release.
 */
 
 
@@ -81,7 +101,6 @@ static char *error_string_array[ESDIF_NUM_ERRORS] = {
 /* prototypes for functions used only in this file. */
 /* static */ void set_error_code(int code);
 static int SizeofSanityCheck(void);
-
 
 
 int SDIF_Init(void) {
@@ -239,14 +258,14 @@ SDIF_ReadFrameHeader(SDIF_FrameHeader *fh, FILE *f) {
     return 1;
 #else
 	amount_read = fread(fh, sizeof(*fh), 1, f);
+	// post("  size I jsut read: %ld", fh->size);
 	if (amount_read == 1) return 1;
 	if (amount_read == 0) {
 		/* Now that fread failed, maybe we're at EOF. */
 		if (feof(f)) return 0;
 	}
 	return -1;
-#endif
-
+#endif /* LITTLE_ENDIAN */
 }
 
 
@@ -361,8 +380,8 @@ int SDIF_SkipMatrix(SDIF_MatrixHeader *head, FILE *f) {
 
 
 int SDIF_ReadMatrixData(void *putItHere, FILE *f, SDIF_MatrixHeader *head) {
-	int datumSize = SDIF_GetMatrixDataTypeSize(head->matrixDataType);
-	int numItems = head->rowCount * head->columnCount;
+	size_t datumSize = (size_t) SDIF_GetMatrixDataTypeSize(head->matrixDataType);
+	size_t numItems = (size_t) (head->rowCount * head->columnCount);
 	
 #ifdef LITTLE_ENDIAN
 	switch (datumSize) {
@@ -420,7 +439,7 @@ static	char	p[BUFSIZE];
 
 int
 SDIF_Write1(void *block, size_t n, FILE *f) {
-    return fwrite (block,1,n,f);
+    return (int) fwrite (block,1,n,f);
 }
 
 
@@ -447,7 +466,7 @@ SDIF_Write2(void *block, size_t n, FILE *f) {
 
     return fwrite(p,2,n,f);
 #else
-    return fwrite (block,2,n,f);
+    return (int) fwrite (block,2,n,f);
 #endif
 
 }
@@ -477,7 +496,7 @@ SDIF_Write4(void *block, size_t n, FILE *f) {
 
     return fwrite(p,4,n,f);
 #else
-    return fwrite (block,4,n,f);
+    return (int) fwrite (block,4,n,f);
 #endif
 
 }
@@ -511,7 +530,7 @@ SDIF_Write8(void *block, size_t n, FILE *f) {
 
     return fwrite(p,8,n,f);
 #else
-    return fwrite (block,8,n,f);
+    return (int) fwrite (block,8,n,f);
 #endif
 
 }
@@ -519,7 +538,7 @@ SDIF_Write8(void *block, size_t n, FILE *f) {
 
 int
 SDIF_Read1(void *block, size_t n, FILE *f) {
-    return fread (block,1,n,f);
+    return (int) fread (block,1,n,f);
 }
 
 
@@ -549,7 +568,7 @@ SDIF_Read2(void *block, size_t n, FILE *f) {
 
     return result;
 #else
-    return fread(block,2,n,f);
+    return (int) fread(block,2,n,f);
 #endif
 
 }
@@ -583,7 +602,7 @@ SDIF_Read4(void *block, size_t n, FILE *f) {
     return result;
 
 #else
-    return fread(block,4,n,f);
+    return (int)fread(block,4,n,f);
 #endif
 
 }
@@ -622,7 +641,7 @@ SDIF_Read8(void *block, size_t n, FILE *f) {
     return result;
 
 #else
-    return fread(block,8,n,f);
+    return (int) fread(block,8,n,f);
 #endif
 
 }

@@ -1,12 +1,31 @@
 /*
- * Copyright (c) 1996, 1997, 1998 Regents of the University of California.
- * All rights reserved.
- * The name of the University may not be used to endorse or promote
- * products derived from this software without specific prior written
- * permission.  THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE
- * IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE.
+Copyright (c) 1996. 1997, 1998, 1999.  The Regents of the University of California
+(Regents). All Rights Reserved.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for educational, research, and not-for-profit purposes,
+without fee and without a signed licensing agreement, is hereby granted,
+provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and distributions.
+Contact The Office of Technology Licensing, UC Berkeley, 2150 Shattuck
+Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for commercial
+licensing opportunities.
+
+Written by Matt Wright, Amar Chaudhary, and Sami Khoury, The Center for New
+Music and Audio Technologies, University of California, Berkeley.
+
+     IN NO EVENT SHALL REGENTS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
+     SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST
+     PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS
+     DOCUMENTATION, EVEN IF REGENTS HAS BEEN ADVISED OF THE POSSIBILITY OF
+     SUCH DAMAGE.
+
+     REGENTS SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT
+     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+     FOR A PARTICULAR PURPOSE. THE SOFTWARE AND ACCOMPANYING
+     DOCUMENTATION, IF ANY, PROVIDED HEREUNDER IS PROVIDED "AS IS".
+     REGENTS HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+     ENHANCEMENTS, OR MODIFICATIONS.
 
  sdif.h
 
@@ -15,7 +34,7 @@
  SDIF spec: http://www.cnmat.berkeley.edu/SDIF/
 
  See sdif.c for revision history.
- version 2.2
+ version 2.3
 
  #include <stdio.h> before this file for FILE *.
 
@@ -127,7 +146,7 @@ typedef struct {
    these must be kept in sync with the array in sdif.c. */
 typedef enum {
     SDIF_FLOAT32 = 0x0004,
-    SDIF_FLOAT64 = 0x0108,
+    SDIF_FLOAT64 = 0x0008,
     SDIF_INT32 = 0x0104,
     SDIF_UINT32 = 0x0204,
     SDIF_UTF8 = 0x0301,
@@ -146,7 +165,7 @@ typedef enum {
 
 /* You must call this before any of the other SDIF procedures.  
    Returns 0 if OK; 1 if not */
-int SDIF_Init(void);
+int SDIF_Init();
 
 /* SDIF_GetLastErrorCode and SDIF_GetLastErrorString --
    Returns the code, as defined above, or string representation of the

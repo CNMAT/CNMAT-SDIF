@@ -1,6 +1,6 @@
-
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "sdif.h"
 
 
@@ -31,8 +31,8 @@ int main (int argc, char *argv[]) {
   FILE	*infile,*outfile;
   float	freq,amp,confidence,phase;
   char	*extension, outfname[1024];
-  struct SDIFFrameHeader head;
-  MatrixHeader matrixHeader;
+  SDIF_FrameHeader head;
+  SDIF_MatrixHeader SDIF_MatrixHeader;
 
   if (argc > 1 && atoi(argv[1]) > 0) {
       srate = atoi(argv[1]);
@@ -55,32 +55,32 @@ int main (int argc, char *argv[]) {
     extension = strrchr(outfname,'.');
     strcpy(extension,".pics.sdif");
     
-    if ((outfile = OpenSDIFWrite(outfname)) == NULL) {
+    if ((outfile = SDIF_OpenWrite(outfname)) == NULL) {
       fprintf (stderr, "Error creating %s\n",outfname);
       fclose(infile);
       return -1;
     }
     
-    Copy4Bytes(head.frameType,"1PIC");
-    head.streamID = GenUniqueSDIFFrameID();
+    SDIF_Copy4Bytes(head.frameType,"1PIC");
+    head.streamID = SDIF_UniqueStreamID();
     head.matrixCount = 1;
 
         
     while (fscanf(infile,"%d %d",&sampleIndex,&numPics) == 2) {
 	head.time = (float)sampleIndex / (float)srate;
-	matrixHeader.rowCount = numPics;
-	matrixHeader.columnCount = 4;
-	Copy4Bytes(matrixHeader.matrixType,"1PIC");
-	matrixHeader.matrixDataType = SDIF_FLOAT32;
+	SDIF_MatrixHeader.rowCount = numPics;
+	SDIF_MatrixHeader.columnCount = 4;
+	SDIF_Copy4Bytes(SDIF_MatrixHeader.matrixType,"1PIC");
+	SDIF_MatrixHeader.matrixDataType = SDIF_FLOAT32;
 	head.size = 16 + 16 + 4 * 4 * numPics ; 
-	WriteSDIFFrameHeader(&head,outfile);
-	WriteMatrixHeader(&matrixHeader,outfile);
+	SDIF_WriteFrameHeader(&head,outfile);
+	SDIF_WriteMatrixHeader(&SDIF_MatrixHeader,outfile);
 	for (j = 0; j < numPics; ++j) {
 	    fscanf (infile,"%d %f %f %f %f",&picIndex,&freq,&amp,&confidence,&phase);
-	    write4(&amp,1,outfile);
-	    write4(&freq,1,outfile);
-	    write4(&phase,1,outfile);
-	    write4(&confidence,1,outfile);
+	    SDIF_Write4(&amp,1,outfile);
+	    SDIF_Write4(&freq,1,outfile);
+	    SDIF_Write4(&phase,1,outfile);
+	    SDIF_Write4(&confidence,1,outfile);
 	}
     }
     
