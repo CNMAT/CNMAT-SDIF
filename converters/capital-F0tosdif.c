@@ -1,6 +1,6 @@
 /* 
 
-Copyright (c) 1997,1998,1999.  The Regents of the University of California
+Copyright (c) 1997,1998,1999, 2004.  The Regents of the University of California
 (Regents).  All Rights Reserved.
 
 Permission to use, copy, modify, and distribute this software and its
@@ -29,7 +29,7 @@ University of California, Berkeley.
 
 /*
 
- F02sdif.c
+ capital-F0tosdif.c
 
  converts "Capital F-zero" files (pitch,loudness,confidence) to SDIF
 
@@ -37,6 +37,8 @@ University of California, Berkeley.
 
  Amar Chaudhary, 1/13/98
  Matt Wright 10/12/99: new SDIF library
+ Matt Wright 12/14/02: renamed because of OSX case insensitivity
+
 */
 
 #include <stdio.h>
