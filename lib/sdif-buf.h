@@ -339,15 +339,16 @@ SDIFresult SDIFbuf_ReadStream(SDIFbuf_Buffer b,
                               );
 
 
-/* SDIFbuf_BeginReadStream (read specified SDIF file/stream into an SDIFbuf_Buffer instance)
+/* SDIFbuf_ReadStreamFromOpenFile
+   (read specified SDIF file/stream into an SDIFbuf_Buffer instance)
    file specified by open filehandle
    NOTE: in base code, only mode == STREAM_NUMBER is implemented
 */
-SDIFresult SDIFbuf_BeginReadStream(SDIFbuf_Buffer b, 
-                                   FILE *f, 
-                                   SDIFwhichStreamMode mode, 
-                                   sdif_int32 arg
-                                   );
+SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b, 
+					  FILE *f, 
+					  SDIFwhichStreamMode mode, 
+					  sdif_int32 arg
+					  );
 
 
 /* SDIFbuf_GetFirstFrame (return first frame of an SDIFbuf_Buffer instance)

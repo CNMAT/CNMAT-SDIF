@@ -1012,15 +1012,15 @@ SDIFresult SDIFbuf_ReadStream(SDIFbuf_Buffer b,
   if(!(r = SDIF_OpenRead(filename, &f)))
     return r;
   
-  return SDIFbuf_BeginReadStream(b, f, mode, arg);
+  return SDIFbuf_ReadStreamFromOpenFile(b, f, mode, arg);
 }
 
 
-SDIFresult SDIFbuf_BeginReadStream(SDIFbuf_Buffer b, 
-                                   FILE *f, 
-                                   SDIFwhichStreamMode mode, 
-                                   sdif_int32 arg
-                                   ) 
+SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b, 
+					  FILE *f, 
+					  SDIFwhichStreamMode mode, 
+					  sdif_int32 arg
+					  ) 
 {  
   SDIF_FrameHeader fh;
   SDIFmem_Frame previous, current, first;
