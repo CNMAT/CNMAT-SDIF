@@ -1,0 +1,149 @@
+global { 
+  srate 48000;
+  krate 200;
+}
+
+// *********************************************************
+
+instr pitch_est() {
+  imports table sdif_table1;
+  imports table sdif_table2;
+  imports table sdif_table3;
+  imports table sdif_table4;
+  imports table sdif_table5;
+  tablemap tab(sdif_table1, sdif_table2, sdif_table3, sdif_table4, sdif_table5);
+  table mydata(empty,1000);
+  table wave(harm,1024,1,0,1,0.2,0.3,4);
+  imports exports ksig changed;
+  ksig freq, smfreq;
+
+  if (changed) {
+     getmatrix(tab[changed],1,mydata);
+	 changed = 0;  
+  }
+
+  freq = find_best_pitch(mydata);
+  smfreq = port(freq,0.2);
+  output(oscil(wave,smfreq)/5);
+}
+
+kopcode find_best_pitch(table mat) {
+	ksig nr,i,best,p,str;
+
+	nr = numrows(mat);
+	best = 0;
+
+	i = 0; while (i < nr) {
+		str = matread(mat,i,0);
+		if (str > best) {
+			best = str;
+			p = matread(mat,i,1);
+		}
+		i = i + 1;
+	}
+	return(p);
+}
+
+// *******************************************************
+
+
+instr track() {
+  imports table sdif_table1;
+  imports table sdif_table2;
+  imports table sdif_table3;
+  imports table sdif_table4;
+  imports table sdif_table5;
+  tablemap tab(sdif_table1, sdif_table1, sdif_table2, sdif_table3, sdif_table4, sdif_table5);
+  table mydata(empty,1000);
+  table pure(harm,1024,1);
+  imports exports ksig changed;
+  ksig freq, smfreq, max, f[1024], amp[1024], ind[1024];
+  asig i, sum;
+  oparray oscil[1024];
+
+  if (changed) {
+     kdump(3,3,3,3,3,3,changed);
+     getmatrix(tab[changed],1,mydata);
+	 changed = 0;  
+  }
+  maketracks(f,amp,ind,mydata,max);
+
+  kdump(max);  
+  i=0; sum = 0; while (i < max) {
+    sum = sum + oscil[i](pure,f[i]) * amp[i];
+	i = i + 1;
+  }
+
+  output(sum);
+}
+
+kopcode maketracks(ksig freq[1024], ksig amp[1024], ksig ind[1024], table mat, ksig max) {
+  ksig i, nr, ix, a, f, ph, k;
+
+  nr = numrows(mat);
+ 
+  i = 0; while (i < nr) {
+    ix = matread(mat,i,0);
+	a = matread(mat,i,1);
+	f = matread(mat,i,2);
+	ph = matread(mat,i,3);
+
+	k = get_ind(ix,ind,max);
+	if (k > max) { max = k; }
+	freq[k] = f;
+    amp[k] = a;
+	ind[k] = ix;
+	i = i + 1;
+  }
+}
+
+kopcode get_ind(ksig ix, ksig ind[1024], ksig max) {
+  ksig i;
+
+  i = 0; while (i < max) {
+    if (ind[i] == ix) { return(i); }
+	i = i + 1;
+  }
+  return(i+1);
+}
+
+
+// *******************************************************
+
+kopcode matread(table mat, ksig i, ksig j) {
+	ksig nr, nc;
+
+	nr = tableread(mat,0);
+	nc = tableread(mat,1);
+
+	return(tableread(mat,i*nc+j+2));
+}
+
+kopcode numrows(table mat) {
+  return(tableread(mat,0));
+}
+
+kopcode getmatrix(table t,ivar ind,table mat) {
+  // put matrix #ind from t1 in mat
+	ksig i, pos, r, c, ct, x;
+
+	i = 0; pos = 1;
+	while (i < ind-1) {
+		r = tableread(t,pos+1);
+		c = tableread(t,pos+2);
+		pos = pos + 2 + r * c;
+		i = i + 1;
+	}
+	r = tableread(t,pos+1);
+    c = tableread(t,pos+2);
+
+	tablewrite(mat,0,r); tablewrite(mat,1,c);
+
+	ct = 0; while (ct < r * c) {
+		x = tableread(t,ct + pos + 3);
+		tablewrite(mat,ct+2,x);
+		ct = ct + 1;
+	}
+
+}
+
