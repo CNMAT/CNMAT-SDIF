@@ -1,17 +1,11 @@
+CFLAGS = -I../lib
 
-CFLAGS = -n32
+ALL = dotformat2sdif f0tosdif F0tosdif pics2sdif i2sdif res2sdif
 
-all: res2sdif dotformat2sdif spew-sdif f0tosdif F0tosdif pics2sdif i2sdif
+all: $(ALL)
 
-
-res2sdif: sdif.o res2sdif.o
-	cc $(CFLAGS) -o res2sdif sdif.o res2sdif.o -lm
-
-dotformat2sdif: sdif.o dotformat2sdif.o readformat.o
-	cc $(CFLAGS) -o dotformat2sdif sdif.o dotformat2sdif.o readformat.o
-
-spew-sdif: sdif.o spew-sdif.o
-	cc $(CFLAGS) -o spew-sdif spew-sdif.o sdif.o
+dotformat2sdif: sdif.o dotformat2sdif.o readformat.o sdif-types.o
+	cc $(CFLAGS) -o dotformat2sdif sdif.o dotformat2sdif.o readformat.o sdif-types.o -lm
 
 f0tosdif: sdif.o f0tosdif.o
 	cc $(CFLAGS) -o f0tosdif sdif.o f0tosdif.o
@@ -25,29 +19,34 @@ pics2sdif: sdif.o pics2sdif.o
 i2sdif: sdif.o i2sdif.o
 	cc $(CFLAGS) -o i2sdif sdif.o i2sdif.o
 
-sdif.o: sdif.c sdif.h
-	cc $(CFLAGS) -c sdif.c
+res2sdif: sdif.o res2sdif.o
+	cc $(CFLAGS) -o res2sdif sdif.o res2sdif.o
 
-spew-sdif.o: spew-sdif.c sdif.h
+sdif.o: ../lib/sdif.c ../lib/sdif.h
+	cc $(CFLAGS) -c ../lib/sdif.c
+
+sdif-types.o: ../lib/sdif-types.c ../lib/sdif-types.h
+	cc $(CFLAGS) -c ../lib/sdif-types.c
+
+
+spew-sdif.o: spew-sdif.c ../lib/sdif.h
 	cc $(CFLAGS) -c spew-sdif.c
 
-res2sdif.o: res2sdif.c sdif.h
-	cc $(CFLAGS) -c res2sdif.c
-
-f0tosdif.o: f0tosdif.c sdif.h
+f0tosdif.o: f0tosdif.c ../lib/sdif.h
 	cc $(CFLAGS) -c f0tosdif.c
 
-F0tosdif.o: F0tosdif.c sdif.h
+F0tosdif.o: F0tosdif.c ../lib/sdif.h
 	cc $(CFLAGS) -c F0tosdif.c
 
-dotformat2sdif.o: dotformat2sdif.c sdif.h readformat.h
+dotformat2sdif.o: dotformat2sdif.c ../lib/sdif.h readformat.h
 	cc $(CFLAGS) -c dotformat2sdif.c
 
 readformat.o: readformat.c readformat.h
 	cc $(CFLAGS) -c readformat.c
 
-pics2sdif.o: pics2sdif.c sdif.h
+pics2sdif.o: pics2sdif.c ../lib/sdif.h
 	cc $(CFLAGS) -c pics2sdif.c
 
-i2sdif.o: i2sdif.c sdif.h
-	cc $(CFLAGS) -c i2sdif.c
+clean:
+	rm -f *.o core *~ $(ALL)
+

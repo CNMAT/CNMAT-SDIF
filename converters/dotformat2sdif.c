@@ -1,12 +1,30 @@
-/*
- * Copyright(c) 1997, 1998 Regents of the University of California.
- * All rights reserved.
- * The name of the University may not be used to endorse or promote
- * products derived from this software without specific prior written
- * permission.  THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE
- * IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE.
+/* 
+
+Copyright (c) 1997,1998,1999.  The Regents of the University of California
+(Regents).  All Rights Reserved.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation, without fee and without a signed licensing agreement, is hereby
+granted, provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and
+distributions.  Contact The Office of Technology Licensing, UC Berkeley, 2150
+Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for
+commercial licensing opportunities.
+
+Written by Matt Wright, The Center for New Music and Audio Technologies,
+University of California, Berkeley.
+
+     IN NO EVENT SHALL REGENTS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
+     SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
+     ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
+     REGENTS HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+     REGENTS SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT
+     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+     FOR A PARTICULAR PURPOSE. THE SOFTWARE AND ACCOMPANYING
+     DOCUMENTATION, IF ANY, PROVIDED HEREUNDER IS PROVIDED "AS IS".
+     REGENTS HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+     ENHANCEMENTS, OR MODIFICATIONS.
 
  dotformat2sdif.c
 
@@ -14,16 +32,15 @@
 
  Matt Wright, 1/24/97
  Modified 1/13/98 by Amar Chaudhary for new SDIF format
+ Modified 10/12/99 for new SDIF library
 */
-
-
-xxx must wrap phase
 
 
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "sdif.h"
+#include "sdif-types.h"
 #include "readformat.h"
 
 typedef int Boolean;
@@ -91,6 +108,7 @@ void main(int argc, char *argv[]) {
 
 
 Boolean ConvertFormat(char *filename, formatType t) {
+  SDIFresult r;
   Boolean Finished = FALSE;
   eitherFormat in;
   FILE *out;
@@ -107,8 +125,8 @@ Boolean ConvertFormat(char *filename, formatType t) {
   extension = strrchr(outfilename, '.');
   strcpy(extension, ".sdif");
 
-  out = SDIF_OpenWrite(outfilename);
-  if (out == NULL) {
+  r = SDIF_OpenWrite(outfilename, &out);
+  if (r) {
     fprintf(stderr, "Couldn't open \"%s\" for writing; skipping.\n",
 	    outfilename);
     CloseEitherFormat(in);
@@ -123,8 +141,9 @@ Boolean ConvertFormat(char *filename, formatType t) {
     head.size = SizeOf1TRCFrame(numTracks);
     head.matrixCount = 1;
 
-    if (SDIF_WriteFrameHeader(&head, out) != 1) {
-      fprintf (stderr,"Error writing frame header\n");
+    if (r = SDIF_WriteFrameHeader(&head, out)) {
+      fprintf (stderr,"Error writing frame header: %s\n",
+	       SDIF_GetErrorString(r));
       goto writeerror;
     }
 
@@ -134,8 +153,9 @@ Boolean ConvertFormat(char *filename, formatType t) {
     SDIF_MatrixHeader.rowCount = numTracks;
     SDIF_MatrixHeader.columnCount = 4;
 
-    if (SDIF_WriteMatrixHeader(&SDIF_MatrixHeader, out) != 1) {
-      fprintf (stderr,"Error writing matrix\n");
+    if (r = SDIF_WriteMatrixHeader(&SDIF_MatrixHeader, out)) {
+      fprintf (stderr,"Error writing matrix: %s\n", 
+	       SDIF_GetErrorString(r));
       goto writeerror;
     }
 
@@ -143,8 +163,16 @@ Boolean ConvertFormat(char *filename, formatType t) {
       ReadTrack(in, &trackData.index, &trackData.freq, &trackData.phase,
 		&trackData.amp);
 
-      if (SDIF_WriteRowOf1TRC(&trackData, out) != 1) {
-	fprintf (stderr,"Error writing 1TRC row\n");
+      trackData.phase = WrapPhase32(trackData.phase);
+      if (trackData.amp < 0.f) {
+	trackData.amp = - trackData.amp;
+	trackData.phase = - trackData.phase;
+      }
+
+
+      if (r = SDIF_WriteRowOf1TRC(&trackData, out)) {
+	fprintf (stderr,"Error writing 1TRC row: %s\n",
+		 SDIF_GetErrorString(r));
 	goto writeerror;
       }
     }

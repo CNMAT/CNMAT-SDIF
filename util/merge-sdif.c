@@ -3,15 +3,15 @@ Copyright (c) 1998.  The Regents of the University of California (Regents).
 All Rights Reserved.
 
 Permission to use, copy, modify, and distribute this software and its
-documentation for educational, research, and not-for-profit purposes, without
-fee and without a signed licensing agreement, is hereby granted, provided that
-the above copyright notice, this paragraph and the following two paragraphs
-appear in all copies, modifications, and distributions.  Contact The Office of
-Technology Licensing, UC Berkeley, 2150 Shattuck Avenue, Suite 510, Berkeley,
-CA 94720-1620, (510) 643-7201, for commercial licensing opportunities.
+documentation, without fee and without a signed licensing agreement, is hereby
+granted, provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and
+distributions.  Contact The Office of Technology Licensing, UC Berkeley, 2150
+Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for
+commercial licensing opportunities.
 
-Written by Sami Khoury, The Center for New Music and Audio Technologies,
-University of California, Berkeley.
+Written by Sami Khoury and Matt Wright, The Center for New Music and Audio
+Technologies, University of California, Berkeley.
 
      IN NO EVENT SHALL REGENTS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
      SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
@@ -34,7 +34,8 @@ University of California, Berkeley.
   Sami Khoury
   11/6/1998
 
-  Updated 9/22/99 by Matt Wright
+  Updated 9/22/99 by Matt Wright - fixed stream renumbering
+  Updated 10/12/99 by Matt Wright - use new SDIF library
 
 */
 
@@ -63,7 +64,7 @@ static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID);
 
 int
 main(int argc, char **argv) {
-
+    SDIFresult r;
     unsigned int i, num_inputfiles = 0;
     char *outfile = NULL;
     FILE *outfp = NULL;
@@ -88,17 +89,17 @@ main(int argc, char **argv) {
     num_inputfiles = argc - 2;
     input_files = (FILE **) malloc(num_inputfiles * sizeof(FILE *));
     for (i=0; i < num_inputfiles; i++) {
-	if ((input_files[i] = SDIF_OpenRead(argv[i+1])) == NULL) {
+	if (r = SDIF_OpenRead(argv[i+1], &(input_files[i]))) {
 	    fprintf(stderr, "%s: error opening \"%s\": %s.  Exiting...\n",
-		    argv[0], argv[i+1], SDIF_GetLastErrorString());
+		    argv[0], argv[i+1], SDIF_GetErrorString(r));
 	    return 1;
 	}
     }
 
     /* open the output file. */
-    if ((outfp = SDIF_OpenWrite(outfile)) == NULL) {
+    if (r = SDIF_OpenWrite(outfile, &outfp)) {
 	fprintf(stderr, "%s: error opening \"%s\": %s.  Exiting...\n",
-		argv[0], outfile, SDIF_GetLastErrorString());
+		argv[0], outfile, SDIF_GetErrorString(r));
 	return 1;
     }
 
@@ -114,7 +115,6 @@ main(int argc, char **argv) {
 
     SDIF_CloseWrite(outfp);
     return 0;
-
 }
 
 
@@ -123,7 +123,7 @@ SDIFU_MergeHandles(FILE *outfp, int num_handles, FILE **handles) {
     int i, idx, num_remaining = num_handles;
     SDIF_FrameHeader *headers;
     int *eof;
-    int result;
+    SDIFresult r;
     sdif_float64 earliestTime;
     char *frameBuf;
     int frameBufSize;
@@ -139,14 +139,16 @@ SDIFU_MergeHandles(FILE *outfp, int num_handles, FILE **handles) {
     /* First, read the frame header from each input file */
     for (i = 0; i < num_handles; ++i) {
 	eof[i] = 0;
-	result = SDIF_ReadFrameHeader(&(headers[i]), handles[i]);
-	if (result == 0) {
+	r = SDIF_ReadFrameHeader(&(headers[i]), handles[i]);
+	if (r == ESDIF_END_OF_DATA) {
 	    /* Weird; an empty file.  Oh well. */
 	    SDIF_CloseRead(handles[i]);
 	    eof[i] = 1;
 	    --num_remaining;
-	} else if (result < 0) {
+	} else if (r) {
 	    /* Problem: bomb out */
+	    fprintf(stderr, "problem reading frame header: %s\n", 
+		    SDIF_GetErrorString(r));
 	    return 0;
 	}
     }
@@ -180,9 +182,9 @@ SDIFU_MergeHandles(FILE *outfp, int num_handles, FILE **handles) {
 
 	/* Write this frame to the output with the new streamID. */
 
-	if (SDIF_WriteFrameHeader(&(headers[idx]), outfp) != 1) {
+	if (r = SDIF_WriteFrameHeader(&(headers[idx]), outfp)) {
 	    fprintf(stderr, "merge-sdif: write error: %s\n",
-		    SDIF_GetLastErrorString());
+		    SDIF_GetErrorString(r));
 	    return 0;
 	}
 	frameSize = headers[idx].size-16;
@@ -197,8 +199,8 @@ SDIFU_MergeHandles(FILE *outfp, int num_handles, FILE **handles) {
 
 
 	/* Read the next header from this file */
-	result = SDIF_ReadFrameHeader(&(headers[idx]), handles[idx]);
-        if (result == 0) {
+	r = SDIF_ReadFrameHeader(&(headers[idx]), handles[idx]);
+        if (r == ESDIF_END_OF_DATA) {
             /* End of file. */
             SDIF_CloseRead(handles[idx]);
             eof[idx] = 1;

@@ -3,12 +3,12 @@ Copyright (c) 1999.  The Regents of the University of California (Regents).
 All Rights Reserved.
 
 Permission to use, copy, modify, and distribute this software and its
-documentation for educational, research, and not-for-profit purposes, without
-fee and without a signed licensing agreement, is hereby granted, provided that
-the above copyright notice, this paragraph and the following two paragraphs
-appear in all copies, modifications, and distributions.  Contact The Office of
-Technology Licensing, UC Berkeley, 2150 Shattuck Avenue, Suite 510, Berkeley,
-CA 94720-1620, (510) 643-7201, for commercial licensing opportunities.
+documentation, without fee and without a signed licensing agreement, is hereby
+granted, provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and
+distributions.  Contact The Office of Technology Licensing, UC Berkeley, 2150
+Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for
+commercial licensing opportunities.
 
 Written by Matt Wright, The Center for New Music and Audio Technologies,
 University of California, Berkeley.
@@ -49,21 +49,21 @@ void main(int argc, char **argv) {
 }
 
 static void try_file(char *filename)  {
+    SDIFresult r;
     FILE *f;
 
     printf("List of streams for SDIF file %s\n", filename);
-    f = SDIF_OpenRead(filename);
-    if (f == NULL) {
-	printf("SDIF-buffer: error %d opening SDIF file %s:\n",
-	       SDIF_GetLastErrorCode(), filename);
-	printf("\t%s\n", SDIF_GetLastErrorString());
+    r = SDIF_OpenRead(filename, &f);
+    if (r) {
+	printf("SDIF-buffer: error opening SDIF file %s: %s\n",
+	       SDIF_GetErrorString(r), filename);
 	return;
     } 
 
     do_streamlist(f, filename, 0);
-    if (SDIF_CloseRead(f) != 0) {
+    if (r = SDIF_CloseRead(f)) {
 	    printf("SDIF-buffer: error closing SDIF file %s:\n", filename);
-	    printf("\t%s\n", SDIF_GetLastErrorString());
+	    printf("\t%s\n", SDIF_GetErrorString(r));
     }
 }
 
@@ -74,7 +74,7 @@ void SDIFbuffer_framelist(SDIFBuffer *x, Symbol *fileName) {
     printf("SDIFbuffer_framelist for file %s\n", fileName->s_name);
     f = OpenSDIFFile(fileName->s_name);
     if (f == NULL) {
-	printf("SDIF-buffer: error %d opening SDIF file %s:", SDIF_GetLastErrorCode(),
+	printf("SDIF-buffer: error %d opening SDIF file %s:", SDIF_GetErrorCode(),
 		 fileName->s_name);
 	printf("%s\n", SDIF_GetLastErrorString());
 	return;
@@ -94,8 +94,9 @@ void SDIFbuffer_framelist(SDIFBuffer *x, Symbol *fileName) {
 #define MAX_STREAMS 1000  // Most streams any file should have
 
 static void do_streamlist(FILE *f, char *name, int showframes) {
+    SDIFresult r;
     SDIF_FrameHeader fh;
-    int result, i;
+    int i;
     
     struct {
         sdif_int32 streamID[MAX_STREAMS];
@@ -105,11 +106,11 @@ static void do_streamlist(FILE *f, char *name, int showframes) {
 
     streamsSeen.n = 0;
     
-    while ((result = SDIF_ReadFrameHeader(&fh, f)) == 1) {
+    while ((r = SDIF_ReadFrameHeader(&fh, f)) == 0) {
         for (i = 0; i < streamsSeen.n; ++i) {
             if (streamsSeen.streamID[i] == fh.streamID) {
                 /* Already saw this stream, so just make sure type is OK */
-                if (!SDIF_Str4Eq(fh.frameType, streamsSeen.frameType[i])) {
+                if (!SDIF_Char4Eq(fh.frameType, streamsSeen.frameType[i])) {
                     printf("Warning: First frame for stream %ld\n", fh.streamID);
                     printf(" had type %c%c%c%c, but frame at time %g has type %c%c%c%c\n",
 			   streamsSeen.frameType[i][0], streamsSeen.frameType[i][1],
@@ -120,7 +121,7 @@ static void do_streamlist(FILE *f, char *name, int showframes) {
                     goto skip;
             }
         }
-        printf("  Stream ID %ld: frame type %c%c%c%c, starts at time %g\n",
+        printf("  <stream id=\"%ld\"/>  frame type %c%c%c%c, starts at time %g\n",
              fh.streamID, fh.frameType[0], fh.frameType[1], fh.frameType[2], fh.frameType[3],
              fh.time);
          
@@ -140,15 +141,15 @@ static void do_streamlist(FILE *f, char *name, int showframes) {
                      fh.size, (float) fh.time, fh.streamID, fh.matrixCount);
         }
 
-        if (SDIF_SkipFrame(&fh, f) != 1) {
+        if (r = SDIF_SkipFrame(&fh, f)) {
             printf("SDIF-buffer: error skipping frame in SDIF file %s:", name);
-            printf("%s\n", SDIF_GetLastErrorString());
+            printf("%s\n", SDIF_GetErrorString(r));
 	    return;
         }
     }
 
-    if (result != 0) {
+    if (r != ESDIF_END_OF_DATA) {
         printf("SDIF-buffer: error reading SDIF file %s:", name);
-        printf("%s\n", SDIF_GetLastErrorString());
+        printf("%s\n", SDIF_GetErrorString(r));
     }
 }

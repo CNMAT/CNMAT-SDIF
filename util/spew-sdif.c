@@ -1,12 +1,30 @@
-/*
- * Copyright(c) 1997,1998 Regents of the University of California.
- * All rights reserved.
- * The name of the University may not be used to endorse or promote
- * products derived from this software without specific prior written
- * permission.  THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE
- * IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE.
+/* 
+
+Copyright (c) 1997,1998,1999,2000.  The Regents of the University of California
+(Regents).  All Rights Reserved.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation, without fee and without a signed licensing agreement, is hereby
+granted, provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and
+distributions.  Contact The Office of Technology Licensing, UC Berkeley, 2150
+Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for
+commercial licensing opportunities.
+
+Written by Matt Wright, The Center for New Music and Audio Technologies,
+University of California, Berkeley.
+
+     IN NO EVENT SHALL REGENTS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
+     SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
+     ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
+     REGENTS HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+     REGENTS SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT
+     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+     FOR A PARTICULAR PURPOSE. THE SOFTWARE AND ACCOMPANYING
+     DOCUMENTATION, IF ANY, PROVIDED HEREUNDER IS PROVIDED "AS IS".
+     REGENTS HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+     ENHANCEMENTS, OR MODIFICATIONS.
 
  spew-sdif.c
 
@@ -16,6 +34,11 @@
 
  1/12/98 - Edited by Amar Chaudhary to conform to revised SDIF spec
  9/15/98 - Now handles 4-byte padding properly (Amar)
+ 12/16/99: minor tweaks for less compiler warnings, handling printing
+           of strings' null termination (Matt)
+ 3/30/2000: At IRCAM, fix for zero-matrix frames (Matt)
+ 6/1/2000: Support 16 bit ints
+ 6/5/2000: Fixed null-termination check bug
 */
 
 #include <stdio.h>
@@ -60,7 +83,7 @@ Boolean IsNewId(sdif_int32 id) {
 
   if (numIdsSeen == MAX_IDS_TO_REMEMBER) {
     if (!sawTooMany) {
-      fprintf(stderr, "*** Saw more than %d unique IDs---too many to remember!\n",
+      fprintf(stderr, "spew-sdif: more than %d unique IDs---too many to remember!\n",
 	      MAX_IDS_TO_REMEMBER);
       sawTooMany = TRUE;
     }
@@ -73,7 +96,7 @@ Boolean IsNewId(sdif_int32 id) {
 void PrintAllIDs(void) {
   int i;
   printf("\n%s%d Unique IDs found in the file:\n",
-	 sawTooMany ? "*** AT LEAST " : "", numIdsSeen);
+	 sawTooMany ? "AT LEAST " : "", numIdsSeen);
   for (i = 0; i < numIdsSeen; i++) {
     printf("%ld ", idsSeen[i]);
     if (i % 7 == 6) printf("\n");
@@ -85,17 +108,21 @@ void SpewSDIF(char *filename) {
   int frameCount;
   SDIF_FrameHeader fh;
   SDIF_MatrixHeader	mh;
-  FILE *f = SDIF_OpenRead(filename);
+  FILE *f;
+    SDIFresult r;
 
-  if (f == NULL) {
-    printf("Couldn't open %s: %s\n", filename, SDIF_GetLastErrorString());
+
+  r = SDIF_OpenRead(filename, &f);
+
+  if (r) {
+    printf("Couldn't open %s: %s\n", filename, SDIF_GetErrorString(r));
     return;
   }
 
 
   ForgetIDs();
   frameCount = 0;
-  while (SDIF_ReadFrameHeader(&fh, f) == 1) {
+  while (!(r = SDIF_ReadFrameHeader(&fh, f))) {
     int i;
 
     frameCount++;
@@ -105,14 +132,14 @@ void SpewSDIF(char *filename) {
 	   fh.frameType[3], fh.size, fh.time, fh.streamID, fh.matrixCount);
 
     if (fh.size < 16) {
-      fprintf(stderr, "*** Frame size count %d too small for frame header\n",
-	      fh.size);
+      fprintf(stderr, "%s: Frame size count %d too small for frame header\n",
+	      filename, fh.size);
       goto close;
     }
 
     if ((fh.size & 7) != 0) {
-      fprintf(stderr, "*** Frame size count %d is not a multiple of 8\n",
-	      fh.size);
+      fprintf(stderr, "%s: Frame size count %d is not a multiple of 8\n",
+	      filename, fh.size);
       goto close;
     }
 
@@ -120,16 +147,28 @@ void SpewSDIF(char *filename) {
       printf("---First frame with stream ID %ld\n", fh.streamID);
     }
 
+    if (fh.matrixCount == 0) {
+      fprintf(stderr, "%s: Frame with zero matrices!!  (skipping)\n", filename);
+      r = SDIF_SkipFrame(&fh, f);
+      if (r) {
+	fprintf(stderr, "Problem skipping frame: %s\n", SDIF_GetErrorString(r));
+      }
+    }
+
+
     for (i = 0; i < fh.matrixCount; ++i) {
       int j,k;
 
-      SDIF_ReadMatrixHeader(&mh,f);
+      if (r = SDIF_ReadMatrixHeader(&mh,f)) {
+	printf("Problem reading matrix header: %s\n", SDIF_GetErrorString(r));
+	goto close;
+      } 
+
       printf ("   Matrix %d: Type %c%c%c%c, %s, %ld Row%s, %ld Column%s\n",i,
 	      mh.matrixType[0],mh.matrixType[1],mh.matrixType[2],mh.matrixType[3],
 	      MDTstring(mh.matrixDataType),
 	      mh.rowCount, mh.rowCount==1? "" : "s", 
 	      mh.columnCount, mh.columnCount==1? "" : "s");
-
 
 
       switch (mh.matrixDataType) {
@@ -158,6 +197,23 @@ void SpewSDIF(char *filename) {
 	  puts ("");
 	}
 	break;
+
+      case SDIF_INT16 :
+	for (j = 0; j < mh.rowCount; ++j) {
+	  for (k = 0; k < mh.columnCount; ++k) {
+	    sdif_int16 val16;
+	    SDIF_Read2(&val16, 1, f);
+	    printf ("\t%d",val16);
+	  }
+	  puts ("");
+	}
+
+	{
+	    sdif_int16 pad[3];
+	    SDIF_Read2(&pad, SDIF_PaddingRequired(&mh), f);
+	}
+	break;
+
 
       case SDIF_INT32 :
 	for (j = 0; j < mh.rowCount; ++j) {
@@ -195,7 +251,8 @@ void SpewSDIF(char *filename) {
 	    char *data = malloc(numBytes);
 	    SDIF_Read1(data, numBytes, f);
 
-	    /* Column-by-column, see if it's really UTF8 or just ASCII */
+	    /* Column-by-column, see if there are any multibyte characters, 
+	       or just ASCII */
 
 #define IsASCII(c) (!((c) & 128))
 	    for (k = 0; k < mh.columnCount; ++k) { 
@@ -211,10 +268,26 @@ void SpewSDIF(char *filename) {
 			   "Sorry; no UTF8 support yet.]\n", k);
 		} else {
 		    printf("[%d] \"", k);
-		    for (j = 0; j < mh.rowCount; ++j) {
-			printf("%c", data[j*mh.columnCount + k]);
+		    for (j = 0; j < mh.rowCount-1; ++j) {
+			int c = data[j*mh.columnCount + k];
+			if (c == '\0') {
+			    printf("\"\n [next string]\"");
+			} else {
+			    printf("%c", c);
+			}
 		    }
 		    printf("\"\n");
+		    if (data[j*mh.columnCount + k] != '\0') {
+			printf("Warning: This UTF-8 column is not properly null-terminated\n");
+		    }
+
+#ifdef PRINT_STRINGS_IN_HEX_TOO
+		    printf(" Hex: ");
+		    for (j = 0; j < mh.rowCount; ++j) {
+			printf("%x ", data[j*mh.columnCount + k]);
+		    }
+		    printf("\n");
+#endif
 		}
 	    }
 	    free(data);
@@ -236,15 +309,15 @@ void SpewSDIF(char *filename) {
 	break;
 
       default:
-	fprintf (stderr, "*** Unrecognized data type %x\n",mh.matrixDataType);
+	fprintf (stderr, "%s Unrecognized data type %x\n",
+		 filename, mh.matrixDataType);
 	goto close;
       }
     }
-
   }
 
-  if (!feof(f)) {
-    fprintf(stderr, "*** Bad frame header!\n");
+  if (r != ESDIF_END_OF_DATA) {
+    fprintf(stderr, "%s: Bad frame header!\n", filename);
     goto close;
   }
 
@@ -260,6 +333,7 @@ char unrecognized[50];
 char *MDTstring(sdif_int32 t) {
     if (t == SDIF_FLOAT32) return "SDIF_FLOAT32";
     if (t == SDIF_FLOAT64) return "SDIF_FLOAT64";
+    if (t == SDIF_INT16) return "SDIF_INT16";
     if (t == SDIF_INT32) return "SDIF_INT32";
     if (t == SDIF_UINT32) return "SDIF_UINT32";
     if (t == SDIF_UTF8) return "SDIF_UTF8";

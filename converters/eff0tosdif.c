@@ -3,12 +3,12 @@ Copyright (c) 1998.  The Regents of the University of California (Regents).
 All Rights Reserved.
 
 Permission to use, copy, modify, and distribute this software and its
-documentation for educational, research, and not-for-profit purposes, without
-fee and without a signed licensing agreement, is hereby granted, provided that
-the above copyright notice, this paragraph and the following two paragraphs
-appear in all copies, modifications, and distributions.  Contact The Office of
-Technology Licensing, UC Berkeley, 2150 Shattuck Avenue, Suite 510, Berkeley,
-CA 94720-1620, (510) 643-7201, for commercial licensing opportunities.
+documentation, without fee and without a signed licensing agreement, is hereby
+granted, provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and
+distributions.  Contact The Office of Technology Licensing, UC Berkeley, 2150
+Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for
+commercial licensing opportunities.
 
 Written by Amar Chaudhary, The Center for New Music and Audio Technologies,
 University of California, Berkeley.
@@ -32,7 +32,7 @@ University of California, Berkeley.
  converts f0 files (rows of frequency estimate, confidence) to SDIF
 
  Amar Chaudhary, 1/13/98
- updated 9/22/99 by Matt Wright
+ updated 10/12/99 by Matt Wright
  
 */
 
@@ -42,9 +42,10 @@ University of California, Berkeley.
 
 
 int main (int argc, char *argv[]) {
+  SDIFresult r;
   int	i;
   FILE	*infile,*outfile;
-  float	timeval,pitchval;
+  float	timeval,pitchval, prevtime;
   float confidence = 1.0f;
   char	outfname[1024];
   SDIF_FrameHeader head;
@@ -60,8 +61,9 @@ int main (int argc, char *argv[]) {
     strcpy(outfname,argv[i]);
     strcat(outfname, ".sdif");
     
-    if ((outfile = SDIF_OpenWrite(outfname)) == NULL) {
-      fprintf (stderr, "Error creating %s\n",outfname);
+    if (r = SDIF_OpenWrite(outfname, &outfile)) {
+      fprintf (stderr, "Error creating %s: %s\n",outfname,
+	       SDIF_GetErrorString(r));
       fclose(infile);
       return -1;
     }
@@ -70,8 +72,22 @@ int main (int argc, char *argv[]) {
     head.streamID = SDIF_UniqueStreamID();
     head.matrixCount = 1;
 
+
+    prevtime = -9999999.0f;
         
     while (fscanf(infile,"%f %f",&timeval,&pitchval) == 2) {
+	if (pitchval < 0) {
+	    fprintf (stderr, "Error in %s: pitch %f is no good.\n",
+		     argv[i], pitchval);
+	    return -1;
+	}
+	if (timeval < prevtime) {
+	    fprintf (stderr, "Error in %s: time tag %f followed by time tag %f\n",
+		     argv[i], prevtime, timeval);
+	    return -1;
+	}
+	prevtime = timeval;
+
 	head.time = timeval;
 	SDIF_MatrixHeader.rowCount = 1;
 	SDIF_MatrixHeader.columnCount = 2;
@@ -81,7 +97,11 @@ int main (int argc, char *argv[]) {
 	SDIF_WriteFrameHeader(&head,outfile);
 	SDIF_WriteMatrixHeader(&SDIF_MatrixHeader,outfile);
 	SDIF_Write4(&pitchval,1,outfile);
-	SDIF_Write4(&confidence,1,outfile);
+	if (SDIF_Write4(&confidence,1,outfile)) {
+	    fprintf (stderr, "Error writing %s: %s\n",
+		     outfname, SDIF_GetErrorString(r));
+	    return -1;
+	}
     }
 
     
