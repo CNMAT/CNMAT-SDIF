@@ -44,11 +44,13 @@ commercial licensing opportunities.
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
+#include <float.h>
 #include "sdif.h"
 #include "sdif-mem.h"
 #include "sdif-buf.h"
 #include "sdif-buf-private.h"
 
+#include "ext.h"
 
 /************************/
 /*                      */
@@ -1042,12 +1044,11 @@ SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b,
   first = current = previous = NULL;
 
   //  loop to read entire file
-  while((r = SDIF_ReadFrameHeader(&fh, f)) == 0) 
-  {
-    if(fh.streamID == streamID) 
-    {
+  while((r = SDIF_ReadFrameHeader(&fh, f)) == ESDIF_SUCCESS) {
+  
+    if (fh.streamID == streamID)  {
       //  we want this frame
-      if(r = SDIFmem_ReadFrameContents(&fh, f, &current)) 
+      if (r = SDIFmem_ReadFrameContents(&fh, f, &current)) 
       {
         SDIF_CloseRead(f);
         return ESDIF_READ_FAILED;
@@ -1061,11 +1062,9 @@ SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b,
       else
         previous->next = current;
       previous = current;
-    } else 
-    {
+    } else {      
     //  skip this frame
-      if(r = SDIF_SkipFrame(&fh, f)) 
-      {
+      if(r = SDIF_SkipFrame(&fh, f)) {
         SDIF_CloseRead(f);
         return ESDIF_READ_FAILED;
       }
@@ -1081,8 +1080,7 @@ SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b,
 
   //  close file  
   r = SDIF_CloseRead(f);
-    
-  //  now update all the buffer's state according to the newly read data
+
   bp->head = first;
   bp->tail = current;
   bp->streamID = first->header.streamID;
@@ -1350,5 +1348,78 @@ SDIFresult SDIFbuf_TimeShiftToZero(SDIFbuf_Buffer b)
   }
     
   return NULL;
+}
+
+
+SDIFresult SDIFbuf_GetMaxNumColumns(SDIFbuf_Buffer b, const char *matrixType, sdif_int32 *result) {
+  SDIFmem_Frame f;
+  SDIFmem_Matrix m;
+  sdif_int32 r, c;
+
+  if(!(f = SDIFbuf_GetFirstFrame(b)))
+    //  buffer is empty
+    return ESDIF_END_OF_DATA;
+
+   r = -1;  // Matrix type not yet found
+
+   while(f) {
+    for (m = f->matrices; m != NULL; m = m->next) {
+		if (SDIF_Char4Eq(matrixType, m->header.matrixType)) {
+		    c = m->header.columnCount;
+		    if (c > r) r = c;
+		}
+    } 
+    f = SDIFbuf_GetNextFrame(f);
+   }  
+   
+   if (r == -1) return ESDIF_BAD_MATRIX_DATA_TYPE;
+   
+	*result = r;
+	return  ESDIF_SUCCESS;  
+}
+
+#define MIN(x,y) (((x)<(y))?(x):(y))
+#define MAX(x,y) (((x)>(y))?(x):(y))
+
+
+SDIFresult SDIFbuf_GetColumnRanges(SDIFbuf_Buffer b, const char *matrixType, sdif_int32 ncols, 
+								   sdif_float64 *column_mins, sdif_float64 *column_maxes) {
+	SDIFmem_Frame f;
+	SDIFmem_Matrix m;
+	sdif_int32 r, c;
+	Boolean seenAnyYet = FALSE;
+	sdif_float64 cellValue;
+	SDIFresult result;
+
+	if(!(f = SDIFbuf_GetFirstFrame(b))) {
+		//  buffer is empty
+		return ESDIF_END_OF_DATA;
+	}
+
+	for (c = 0; c < ncols; ++c) {
+		column_mins[c] = DBL_MAX;
+		column_maxes[c] = DBL_MIN;
+	}
+
+	while (f) {
+		for (m = f->matrices; m != NULL; m = m->next) {
+			if (SDIF_Char4Eq(matrixType, m->header.matrixType)) {
+			   	seenAnyYet = TRUE;
+			    for (r = 0; r < m->header.rowCount; ++r) {
+			    	for (c = 0; c < m->header.columnCount && c < ncols; ++c) {
+			    		result = SDIFbuf_GetValueInMatrix(m, c, r, ESDIF_NAN_ACTION_FAIL, &cellValue);
+			    		if (result == ESDIF_SUCCESS) {
+			    			column_mins[c] = MIN(column_mins[c], cellValue);
+			    			column_maxes[c] = MAX(column_maxes[c], cellValue);
+			    		}
+			    	}
+			    }
+			}
+		} 
+		f = SDIFbuf_GetNextFrame(f);
+	}
+
+	if (!seenAnyYet) return ESDIF_BAD_MATRIX_DATA_TYPE;
+	return  ESDIF_SUCCESS;  
 }
 

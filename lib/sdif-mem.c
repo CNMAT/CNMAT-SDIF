@@ -38,10 +38,15 @@ Technologies, University of California, Berkeley.
 
 #include <stdio.h>
 #include <string.h> /* for strerror() */
-#include <assert.h>
 #include <errno.h>
 #include "sdif.h"
 #include "sdif-mem.h"
+
+#ifdef REALASSERT
+#include <assert.h>
+#else
+#define assert(x) /* Do nothing */
+#endif
 
 
 

@@ -425,3 +425,18 @@ SDIFresult SDIFbuf_GetMaxMatrixTime(SDIFbuf_Buffer b, const char *matrixType, sd
 SDIFresult SDIFbuf_TimeShiftToZero(SDIFbuf_Buffer b);
 
 
+/* SDIFbuf_GetMaxNumColumns
+   Of all matrices in b of type matrixType, what's the largest number of columns that any contains?
+   Returns ESDIF_END_OF_DATA if buffer is empty, ESDIF_BAD_MATRIX_DATA_TYPE if buffer has no matrices
+   of the given type.
+ */
+SDIFresult SDIFbuf_GetMaxNumColumns(SDIFbuf_Buffer b, const char *matrixType, sdif_int32 *result);
+
+
+/* SDIFbuf_GetColumnRanges
+   What are the minimum and maximum values for each column across all rows, in all matrices
+   of the given type, across the entire stream?  Checks only the given number of columns.  */
+
+SDIFresult SDIFbuf_GetColumnRanges(SDIFbuf_Buffer b, const char *matrixType, sdif_int32 ncols, 
+								   sdif_float64 *column_mins, sdif_float64 *column_maxes);
+								   

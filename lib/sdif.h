@@ -98,6 +98,8 @@ Music and Audio Technologies, University of California, Berkeley.
 
 #endif
 
+
+#ifndef __EXT_TYPES_H__   // Max/MSP header that declares its own Boolean type
 #ifndef SDIF_BOOLEAN
 typedef unsigned char Boolean;
 #undef TRUE
@@ -106,7 +108,7 @@ typedef unsigned char Boolean;
 #define FALSE 0
 #define SDIF_BOOLEAN
 #endif
-
+#endif
 
 
 

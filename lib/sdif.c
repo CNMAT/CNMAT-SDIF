@@ -69,7 +69,6 @@ Music and Audio Technologies, University of California, Berkeley.
 */
 
 
-#define REALASSERT
 #ifdef REALASSERT
 #include <assert.h>
 #else
