@@ -3,13 +3,12 @@ Copyright (c) 1996. 1997, 1998, 1999.  The Regents of the University of Californ
 (Regents). All Rights Reserved.
 
 Permission to use, copy, modify, and distribute this software and its
-documentation for educational, research, and not-for-profit purposes,
-without fee and without a signed licensing agreement, is hereby granted,
-provided that the above copyright notice, this paragraph and the
-following two paragraphs appear in all copies, modifications, and distributions.
-Contact The Office of Technology Licensing, UC Berkeley, 2150 Shattuck
-Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for commercial
-licensing opportunities.
+documentation, without fee and without a signed licensing agreement, is hereby
+granted, provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and
+distributions.  Contact The Office of Technology Licensing, UC Berkeley, 2150
+Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for
+commercial licensing opportunities.
 
 Written by Matt Wright, Amar Chaudhary, and Sami Khoury, The Center for New
 Music and Audio Technologies, University of California, Berkeley.
@@ -65,6 +64,8 @@ Music and Audio Technologies, University of California, Berkeley.
 
  10/1/99 version 2.3 by Matt: minor fixes for public release.
  10/12/99 Version 2.4 by Matt: changed return value convention
+ 12/16/99 Version 2.5: Bug fixes from Maarten de Boer
+ 6/1/00 Version 2.6: Supports sdif_int16;
 */
 
 
@@ -88,7 +89,6 @@ Music and Audio Technologies, University of California, Berkeley.
 
 /* prototypes for functions used only in this file. */
 static int SizeofSanityCheck(void);
-static SDIFresult SkipBytes(FILE *f, int numBytes);
 
 
 /* error handling stuff. */
@@ -248,18 +248,13 @@ SDIFresult SDIF_WriteGlobalHeader(const SDIF_GlobalHeader *h, FILE *f) {
 SDIFresult SDIF_ReadFrameHeader(SDIF_FrameHeader *fh, FILE *f) {
 #ifdef LITTLE_ENDIAN
     SDIFresult r;
-/* mdb change. SDIF_Read1 does not result number of bytes read, but
-** an error code.
-    if (SDIF_Read1(&(fh->frameType),4,f) != 4) {
+
+    if (SDIF_Read1(&(fh->frameType),4,f)) {
     	if (feof(f)) {
 	    return ESDIF_END_OF_DATA;
 	}
 	return ESDIF_READ_FAILED;
     }
-**/
-  if (r = SDIF_Read1(&(fh->frameType),4,f)) return r;
-/* end mdb change*/
-
     if (r = SDIF_Read4(&(fh->size),1,f)) return r;
     if (r = SDIF_Read8(&(fh->time),1,f)) return r;
     if (r = SDIF_Read4(&(fh->streamID),1,f)) return r;
@@ -381,33 +376,81 @@ SDIFresult SDIF_SkipMatrix(const SDIF_MatrixHeader *head, FILE *f) {
     return SkipBytes(f, size);
 }
 
+
 SDIFresult
 SDIF_ReadMatrixData(void *putItHere, FILE *f, const SDIF_MatrixHeader *head) {
     size_t datumSize = (size_t) SDIF_GetMatrixDataTypeSize(head->matrixDataType);
     size_t numItems = (size_t) (head->rowCount * head->columnCount);
+    int paddingBytes;
+    char paddingBuffer[8];  /* Most padding any matrix could have. */
+    SDIFresult r;
     
 #ifdef LITTLE_ENDIAN
     switch (datumSize) {
         case 1:
-            return SDIF_Read1(putItHere, numItems, f);
+            if (r = SDIF_Read1(putItHere, numItems, f)) return r;
         case 2:
-            return SDIF_Read2(putItHere, numItems, f);
+            if (r = SDIF_Read2(putItHere, numItems, f)) return r;
         case 4:
-            return SDIF_Read4(putItHere, numItems, f);
+            if (r = SDIF_Read4(putItHere, numItems, f)) return r;
         case 8:
-            return SDIF_Read8(putItHere, numItems, f);
+            if (r = SDIF_Read8(putItHere, numItems, f)) return r;
         default:
             return ESDIF_BAD_MATRIX_DATA_TYPE;
     }
-    /* This is never reached */
-    return ESDIF_SUCCESS;
 #else
-    if (fread(putItHere, datumSize, numItems, f) == numItems) {
-	return ESDIF_SUCCESS;
-    } else {
+    if (fread(putItHere, datumSize, numItems, f) != numItems) {
 	return ESDIF_READ_FAILED;
     }
 #endif
+
+    /* Handle padding */
+    paddingBytes = SDIF_PaddingRequired(head);
+    if (r = SDIF_Read1(paddingBuffer, paddingBytes, f)) return r;
+
+    return ESDIF_SUCCESS;
+}
+
+
+SDIFresult 
+SDIF_WriteMatrixData(FILE *f, const SDIF_MatrixHeader *head, void *data) {
+    size_t datumSize = (size_t) SDIF_GetMatrixDataTypeSize(head->matrixDataType);
+    size_t numItems = (size_t) (head->rowCount * head->columnCount);
+    SDIFresult r;
+
+#ifdef LITTLE_ENDIAN
+    switch (datumSize) {
+        case 1:
+            if (r = SDIF_Write1(data, numItems, f)) return r;
+        case 2:
+            if (r = SDIF_Write2(data, numItems, f)) return r;
+        case 4:
+            if (r = SDIF_Write4(data, numItems, f)) return r;
+        case 8:
+            if (r = SDIF_Write8(data, numItems, f)) return r;
+        default:
+            return ESDIF_BAD_MATRIX_DATA_TYPE;
+    }
+#else
+    if (fwrite(data, datumSize, numItems, f) != numItems) {
+        return ESDIF_READ_FAILED;
+    }
+#endif
+
+    /* Handle padding */
+    return SDIF_WriteMatrixPadding(f, head);
+}
+
+
+SDIFresult SDIF_WriteMatrixPadding(FILE *f, const SDIF_MatrixHeader *head) {
+    int paddingBytes;
+    sdif_int32 paddingBuffer[2] = {0,0};
+    SDIFresult r;
+
+    paddingBytes = SDIF_PaddingRequired(head);
+    if (r = SDIF_Write1(paddingBuffer, paddingBytes, f)) return r;
+
+    return ESDIF_SUCCESS;
 }
 
 
@@ -446,7 +489,7 @@ SDIFresult SDIF_Write1(const void *block, size_t n, FILE *f) {
 SDIFresult SDIF_Write2(const void *block, size_t n, FILE *f) {
 #ifdef LITTLE_ENDIAN
     SDIFresult r;
-    const char *q = block; /*mdb added const, to avoid compiler warning.*/
+    const char *q = block;
     int	i, m = 2*n;
 
     if ((n << 1) > BUFSIZE) {
@@ -473,7 +516,7 @@ SDIFresult SDIF_Write2(const void *block, size_t n, FILE *f) {
 SDIFresult SDIF_Write4(const void *block, size_t n, FILE *f) {
 #ifdef LITTLE_ENDIAN
     SDIFresult r;
-    const char *q = block; /*mdb added const to avoid compiler warning.*/ 
+    const char *q = block;
     int i, m = 4*n;
 
     if ((n << 2) > BUFSIZE) {
@@ -500,7 +543,7 @@ SDIFresult SDIF_Write4(const void *block, size_t n, FILE *f) {
 SDIFresult SDIF_Write8(const void *block, size_t n, FILE *f) {
 #ifdef LITTLE_ENDIAN
     SDIFresult r;
-    const char *q = block; /*mdb added const to avoid compiler warning.*/ 
+    const char *q = block;
     int i, m = 8*n;
 
     if ((n << 3) > BUFSIZE) {
@@ -629,6 +672,11 @@ static int SizeofSanityCheck(void) {
     int OK = 1;
     static char errorMessage[sizeof("sizeof(sdif_float64) is 999!!!")];
 
+    if (sizeof(sdif_int16) != 2) {
+    	sprintf(errorMessage, "sizeof(sdif_int16) is %d!", sizeof(sdif_int16));
+		OK = 0;
+    }
+
     if (sizeof(sdif_int32) != 4) {
     	sprintf(errorMessage, "sizeof(sdif_int32) is %d!", sizeof(sdif_int32));
 		OK = 0;
@@ -651,7 +699,7 @@ static int SizeofSanityCheck(void) {
 }
 
 
-static SDIFresult SkipBytes(FILE *f, int bytesToSkip) {
+SDIFresult SkipBytes(FILE *f, int bytesToSkip) {
 #ifdef STREAMING
     /* Can't fseek in a stream, so waste some time needlessly copying
        some bytes in memory */

@@ -3,12 +3,12 @@ Copyright (c) 1996, 1997, 1998, 1999.  The Regents of the University of
 California (Regents).  All Rights Reserved.
 
 Permission to use, copy, modify, and distribute this software and its
-documentation for educational, research, and not-for-profit purposes, without
-fee and without a signed licensing agreement, is hereby granted, provided that
-the above copyright notice, this paragraph and the following two paragraphs
-appear in all copies, modifications, and distributions.  Contact The Office of
-Technology Licensing, UC Berkeley, 2150 Shattuck Avenue, Suite 510, Berkeley,
-CA 94720-1620, (510) 643-7201, for commercial licensing opportunities.
+documentation, without fee and without a signed licensing agreement, is hereby
+granted, provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and
+distributions.  Contact The Office of Technology Licensing, UC Berkeley, 2150
+Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for
+commercial licensing opportunities.
 
 Written by Matt Wright and Sami Khoury, The Center for New Music and Audio
 Technologies, University of California, Berkeley.
@@ -36,34 +36,58 @@ Technologies, University of California, Berkeley.
 */
 
 
+#include <stdio.h>
+#include "sdif.h"
+#include "sdif-types.h"
+#include <math.h>
+
+sdif_float32 WrapPhase32(sdif_float32 input_phase) {
+    sdif_float32 r;
+
+    r = fmod(input_phase, 2 * M_PI);
+
+    if (r <= -M_PI) return r+2*M_PI;
+    if (r > M_PI) return r-2*M_PI;
+    return r;
+}
+
+sdif_float64 WrapPhase64(sdif_float64 input_phase) {
+    sdif_float64 r;
+
+    r = fmod(input_phase, 2 * M_PI);
+
+    if (r <= -M_PI) return r+2*M_PI;
+    if (r > M_PI) return r-2*M_PI;
+    return r;
+}
+
+
 /*****************************************/
 /* Some stuff for particular frame types */
 /*****************************************/
 
 
 /* 1TRC */
-int
-SDIF_WriteRowOf1TRC(SDIF_RowOf1TRC *row, FILE *f) {
-    return (SDIF_Write4(row,4,f) == 4);
+SDIFresult SDIF_WriteRowOf1TRC(SDIF_RowOf1TRC *row, FILE *f) {
+    return SDIF_Write4(row,4,f);
 }
 
 
-int
-SDIF_ReadRowOf1TRC(SDIF_RowOf1TRC *row, FILE *f) {
-    return SDIF_Read4(row,4,f) == 4;
+SDIFresult SDIF_ReadRowOf1TRC(SDIF_RowOf1TRC *row, FILE *f) {
+    return SDIF_Read4(row,4,f);
 }
 
 
-int
-SDIF_Read1TRCVals(FILE *f,
-		  sdif_float32 *indexp, sdif_float32 *freqp,
-                      sdif_float32 *ampp, sdif_float32 *phasep) {
+SDIFresult SDIF_Read1TRCVals(FILE *f,
+			     sdif_float32 *indexp, sdif_float32 *freqp,
+			     sdif_float32 *ampp, sdif_float32 *phasep) {
     SDIF_RowOf1TRC data;
 
 #ifdef LITTLE_ENDIAN
-    if (SDIF_Read4(&data, 4, f) != 1) return -1;
+    SDIFresult r;
+    if (r = SDIF_Read4(&data, 4, f)) return r;
 #else
-    if (fread(&data, sizeof(data), 1, f) != 1) return -1;
+    if (fread(&data, sizeof(data), 1, f) != 1) return ESDIF_READ_FAILED;
 #endif
 
     *indexp = data.index;
@@ -71,16 +95,15 @@ SDIF_Read1TRCVals(FILE *f,
     *ampp = data.amp;
     *phasep = data.phase;
 
-    return 0;
-
+    return ESDIF_SUCCESS;
 }
 
 
-int
-SDIF_Write1TRCVals(FILE *f,
-		   sdif_float32 index, sdif_float32 freq,
-		   sdif_float32 amp, sdif_float32 phase) {
+SDIFresult SDIF_Write1TRCVals(FILE *f,
+			      sdif_float32 index, sdif_float32 freq,
+			      sdif_float32 amp, sdif_float32 phase) {
 
+    SDIFresult r;
     SDIF_RowOf1TRC data;
 
     data.index = index;
@@ -89,53 +112,63 @@ SDIF_Write1TRCVals(FILE *f,
     data.phase = phase;
 
 #ifdef LITTLE_ENDIAN
-    if (write4(&data, 4, f) != 1) return -1;
+    if (r = SDIF_Write4(&data, 4, f)) return r;
 #else
-    if (fwrite (&data, sizeof(data), 1, f) != 1) return -1;
+    if (fwrite (&data, sizeof(data), 1, f) != 1) return ESDIF_WRITE_FAILED;
 #endif
 
-    return 0;
-
+    return ESDIF_SUCCESS;
 }
 
 
-sdif_int32
-SizeOf1TRCFrame(int numTracks) {
+sdif_int32 SizeOf1TRCFrame(int numTracks) {
 
-  /* 16 bytes for the time stamp, ID and matrix count, plus 16 bytes for
-     the # rows, # columns, matrix type and matrix data type,
-     plus four 4-byte floating point numbers (index, freq, amp, phase)
-     for each track appearing in this frame. Note that this is always a
+  /* 16 bytes for the time stamp, ID and matrix count, plus the size of the
+     matrix header, plus four 4-byte floating point numbers (index, freq, amp,
+     phase) for each track appearing in this frame. Note that this is always a
      multiple of 8, so no padding is necessary*/
 
-    return  16 + 16 + (4 * 4 * numTracks);
-
+    return  16 + sizeof(SDIF_MatrixHeader) + 
+	(numTracks * sizeof(SDIF_RowOf1TRC));
 }
 
 
 /* 1RES */
-int
-SDIF_WriteRowOf1RES(SDIF_RowOf1RES *row, FILE *f) {
-    return (SDIF_Write4(row,4,f) == 4);
+SDIFresult SDIF_WriteRowOf1RES(SDIF_RowOf1RES *row, FILE *f) {
+    return SDIF_Write4(row,4,f);
 }
 
 
-int
-SDIF_ReadRowOf1RES(SDIF_RowOf1RES *row, FILE *f) {
-    return SDIF_Read4(row,4,f) == 4;
+SDIFresult SDIF_ReadRowOf1RES(SDIF_RowOf1RES *row, FILE *f) {
+    return SDIF_Read4(row,4,f);
 }
 
 
 sdif_int32
 SDIF_SizeOf1RESFrame(int numResonances) {
 
-  /* 16 bytes for the time stamp, ID and matrix count, plus 16 bytes for
-     the # rows, # columns, matrix type and matrix data type,
-     plus four 4-byte floating point numbers (freq, gain, bw phase)
-     for each track appearing in this frame. Note that this is always a
+  /* 16 bytes for the time stamp, ID and matrix count, plus the size of the
+     matrix header, plus four 4-byte floating point numbers (freq, gain, bw
+     phase) for each track appearing in this frame. Note that this is always a
      multiple of 8, so no padding is necessary*/
 
-    return  16 + 16 + (4 * 4 * numResonances);
+    return  16 + sizeof(SDIF_MatrixHeader) + 
+	(numResonances * sizeof(SDIF_RowOf1RES));
+}
 
+
+/* 1FQ0 */
+
+sdif_int32 SDIF_SizeOf1FQ0Frame(int numF0Estimates) {
+    return 16 + sizeof(SDIF_MatrixHeader) + 
+	(numF0Estimates * sizeof(SDIF_RowOf1FQ0));
+}
+
+SDIFresult SDIF_WriteRowOf1FQ0(SDIF_RowOf1FQ0 *row, FILE *f) {
+    return SDIF_Write4(row, 2, f);
+}
+
+SDIFresult SDIF_ReadRowOf1FQ0(SDIF_RowOf1FQ0 *row, FILE *f) {
+        return SDIF_Read4(row,2,f);
 }
 

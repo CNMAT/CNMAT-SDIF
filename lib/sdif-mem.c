@@ -3,12 +3,12 @@ Copyright (c) 1999.  The Regents of the University of California (Regents).
 All Rights Reserved.
 
 Permission to use, copy, modify, and distribute this software and its
-documentation for educational, research, and not-for-profit purposes, without
-fee and without a signed licensing agreement, is hereby granted, provided that
-the above copyright notice, this paragraph and the following two paragraphs
-appear in all copies, modifications, and distributions.  Contact The Office of
-Technology Licensing, UC Berkeley, 2150 Shattuck Avenue, Suite 510, Berkeley,
-CA 94720-1620, (510) 643-7201, for commercial licensing opportunities.
+documentation, without fee and without a signed licensing agreement, is hereby
+granted, provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and
+distributions.  Contact The Office of Technology Licensing, UC Berkeley, 2150
+Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for
+commercial licensing opportunities.
 
 Written by Sami Khoury and Matt Wright, The Center for New Music and Audio
 Technologies, University of California, Berkeley.
@@ -33,7 +33,7 @@ Technologies, University of California, Berkeley.
   by Sami Khoury and Matt Wright
   Split from sdif.c 9/22/99 by Matt Wright
   Updated 10/13/99 by Matt for new SDIF library
-    
+  12/16/99 Version 1.1: Bug fixes from Maarten de Boer    
 */
 
 #include <stdio.h>
@@ -160,6 +160,7 @@ SDIFresult SDIFmem_ReadFrameContents(SDIF_FrameHeader *head, FILE *f,
     SDIFmem_Matrix matrix;
     int i, sz;
     SDIFmem_Matrix *prevNextPtr;
+    int paddingNeeded;
 
     result = (SDIFmem_Frame) (*my_malloc)(sizeof(*result));
     
@@ -194,6 +195,7 @@ SDIFresult SDIFmem_ReadFrameContents(SDIF_FrameHeader *head, FILE *f,
         }
         
         sz = SDIF_GetMatrixDataSize(&(matrix->header));
+	/* Note: SDIF_GetMatrixDataSize includes padding bytes. */
 
 	if (sz == 0) {
 	    matrix->data = 0;
@@ -209,16 +211,14 @@ SDIFresult SDIFmem_ReadFrameContents(SDIF_FrameHeader *head, FILE *f,
 	    SDIFmem_FreeFrame(result);
             return r;
         }
-				/* mdb added: possible padding bytes where not skipped */
-				{
-			    int paddingNeeded = SDIF_PaddingRequired(&(matrix->header));
-			    if (paddingNeeded) {
-						char pad[8] = "\0\0\0\0\0\0\0\0";
-						r = SDIF_Read1(pad, paddingNeeded, f);
-            if (r) return r;
-			    }
-				/* end mdb */
-				}
+	
+	paddingNeeded = SDIF_PaddingRequired(&(matrix->header));
+	if (paddingNeeded) {
+	    /* Read through the padding bytes and throw them away. */
+	    char pad[8];
+	    if (r = SDIF_Read1(pad, paddingNeeded, f)) return r;
+	}
+	
     }
     *putithere = result;
     return ESDIF_SUCCESS;

@@ -3,13 +3,12 @@ Copyright (c) 1996. 1997, 1998, 1999.  The Regents of the University of Californ
 (Regents). All Rights Reserved.
 
 Permission to use, copy, modify, and distribute this software and its
-documentation for educational, research, and not-for-profit purposes,
-without fee and without a signed licensing agreement, is hereby granted,
-provided that the above copyright notice, this paragraph and the
-following two paragraphs appear in all copies, modifications, and distributions.
-Contact The Office of Technology Licensing, UC Berkeley, 2150 Shattuck
-Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for commercial
-licensing opportunities.
+documentation, without fee and without a signed licensing agreement, is hereby
+granted, provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and
+distributions.  Contact The Office of Technology Licensing, UC Berkeley, 2150
+Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for
+commercial licensing opportunities.
 
 Written by Matt Wright, Amar Chaudhary, and Sami Khoury, The Center for New
 Music and Audio Technologies, University of California, Berkeley.
@@ -34,7 +33,7 @@ Music and Audio Technologies, University of California, Berkeley.
  SDIF spec: http://www.cnmat.berkeley.edu/SDIF/
 
  See sdif.c for revision history.
- version 2.3
+ version 2.6
 
  #include <stdio.h> before this file for FILE *.
  (A forthcoming C++ version of this libraray will not require
@@ -56,30 +55,33 @@ Music and Audio Technologies, University of California, Berkeley.
 
 
 /****************************************************/
-/* Create 32-bit and 64-bit int and float typedefs. */
+/* Create fixed-size numeric typedefs.              */
 /****************************************************/
 
 #ifdef __sgi
-    typedef unsigned short sdif_unicode;
-    typedef int                   sdif_int32;
-    typedef unsigned int   sdif_uint32;
-    typedef float           sdif_float32;
-    typedef double           sdif_float64;
+    typedef unsigned short	sdif_unicode;
+    typedef short		sdif_int16;
+    typedef int			sdif_int32;
+    typedef unsigned int	sdif_uint32;
+    typedef float		sdif_float32;
+    typedef double		sdif_float64;
 #elif defined(__WIN32__) || defined(_WINDOWS)
     #ifndef _WINDOWS_
     	#include <windows.h>
     #endif 
-    typedef unsigned short sdif_unicode;
-    typedef int                   sdif_int32;
-    typedef unsigned int   sdif_uint32;
-    typedef float           sdif_float32;
-    typedef double           sdif_float64;
+    typedef unsigned short	sdif_unicode;
+    typedef short		sdif_int16;
+    typedef int			sdif_int32;
+    typedef unsigned int	sdif_uint32;
+    typedef float		sdif_float32;
+    typedef double		sdif_float64;
 #elif defined(__LINUX__)
-    typedef unsigned short sdif_unicode;
-    typedef int                   sdif_int32;
-    typedef unsigned int   sdif_uint32;
-    typedef float           sdif_float32;
-    typedef double           sdif_float64;
+    typedef unsigned short	sdif_unicode;
+    typedef short		sdif_int16;
+    typedef int			sdif_int32;
+    typedef unsigned int	sdif_uint32;
+    typedef float		sdif_float32;
+    typedef double		sdif_float64;
 #else
 
     /* These won't necessarily be the right size on any conceivable
@@ -87,11 +89,12 @@ Music and Audio Technologies, University of California, Berkeley.
        SDIF_Init() performs a sanity check of the sizes of these types,
        so if they're wrong you'll find out about it. */
 
-    typedef unsigned short sdif_unicode;
-    typedef long           sdif_int32;
-    typedef unsigned long  sdif_uint32;
-    typedef float           sdif_float32;
-    typedef double           sdif_float64;
+    typedef unsigned short	sdif_unicode;
+    typedef short		sdif_int16;
+    typedef long		sdif_int32;
+    typedef unsigned long	sdif_uint32;
+    typedef float		sdif_float32;
+    typedef double		sdif_float64;
 
 #endif
 
@@ -168,12 +171,13 @@ typedef struct {
 #define SDIF_SPEC_VERSION 3
 #define SDIF_LIBRARY_VERSION 1
 
-/* codes for data types used in matrices.
-   these must be kept in sync with the array in sdif.c. */
+/* codes for data types used in matrices. */
 typedef enum {
     SDIF_FLOAT32 = 0x0004,
     SDIF_FLOAT64 = 0x0008,
+    SDIF_INT16 = 0x0102,
     SDIF_INT32 = 0x0104,
+    SDIF_INT64 = 0x0108,
     SDIF_UINT32 = 0x0204,
     SDIF_UTF8 = 0x0301,
     SDIF_BYTE = 0x0401,
@@ -197,7 +201,7 @@ typedef enum {
 
 /* SDIF_Init -- 
    You must call this before any of the other SDIF procedures. */
-SDIFresult SDIF_Init();
+SDIFresult SDIF_Init(void);
 
 /* SDIF_GetErrorString --
    Returns the string representation of the given error code. */
@@ -287,7 +291,8 @@ SDIFresult SDIF_WriteMatrixHeader(const SDIF_MatrixHeader *m, FILE *f);
 
 /* SDIF_GetMatrixDataSize --
    Returns the size in bytes of the matrix described by the given 
-   SDIF_MatrixHeader, including possible byte padding. */
+   SDIF_MatrixHeader, including possible byte padding, not including
+   the matrix header. */
 int SDIF_GetMatrixDataSize(const SDIF_MatrixHeader *m);
 
 /* SDIF_PaddingRequired --
@@ -307,9 +312,24 @@ SDIFresult SDIF_SkipMatrix(const SDIF_MatrixHeader *head, FILE *f);
 /* SDIF_ReadMatrixData --
    Assuming that you just read an SDIF_MatrixHeader and want to read the
    matrix data itself into a block of memory that you've allocated, call
-   this procedure to do so.  Handles big/little endian issues.  */
+   this procedure to do so.  Handles big/little endian issues.  Also skips
+   past any padding bytes. */
 SDIFresult SDIF_ReadMatrixData(void *putItHere, FILE *f, 
 			       const SDIF_MatrixHeader *head);
+
+
+/* SDIF_WriteMatrixData 
+   Assuming you just wrote the given SDIF_MatrixHeader, and that it
+   correctly describes your buffer of data, write that buffer to the
+   file, handling big/little endian issues and padding. */
+
+SDIFresult 
+SDIF_WriteMatrixData(FILE *f, const SDIF_MatrixHeader *head, void *data);
+
+/* SDIF_WriteMatrixPadding
+   Assuming you just wrote the given SDIF_MatrixHeader and the matrix it
+   describes, write the appropriate number (0-7) of padding bytes. */
+SDIFresult SDIF_WriteMatrixPadding(FILE *f, const SDIF_MatrixHeader *head);
 
 
 /************* Stream IDs *************/
@@ -358,6 +378,13 @@ SDIFresult SDIF_Read1(void *block, size_t n, FILE *f);
 SDIFresult SDIF_Read2(void *block, size_t n, FILE *f);
 SDIFresult SDIF_Read4(void *block, size_t n, FILE *f);
 SDIFresult SDIF_Read8(void *block, size_t n, FILE *f);
+
+
+/* SkipBytes 
+   Usually you want to call SDIF_SkipFrame or SDIF_SkipMatrix
+   instead of this, which simply skips forward n bytes in an SDIF file. */
+
+SDIFresult SkipBytes(FILE *f, int bytesToSkip);
 
 
 #ifdef __cplusplus
