@@ -363,6 +363,8 @@ void SDIF_Copy4Bytes(char *target, const char *string);
    conversion when necessary. */
 
 
+#undef LITTLE_ENDIAN  /* OSX workaround 031218 */
+
 #if defined(__WIN32__) || defined(_WINDOWS) || defined(__LINUX__)
 #define LITTLE_ENDIAN  1
 #else 
