@@ -1,0 +1,8 @@
+#!/usr/local/bin/tclsh8.0
+
+# send an index message.
+set sockd [socket localhost 7343]
+fconfigure $sockd -buffering line
+puts $sockd "index /usr/local/sdif/trumpet.sdif"
+puts stderr "ssp client: server said: \"[gets $sockd]\""
+close $sockd
