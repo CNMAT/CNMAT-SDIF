@@ -1,15 +1,16 @@
 CC = cc
 CXX = CC
 
+
 ENDIAN = -DBIG_ENDIAN -D__BYTE_INCOHERENT
-# ENDIAN = -DLITTLE_ENDIAN -D__BYTE_COHERENT
+#ENDIAN = -DLITTLE_ENDIAN -D__BYTE_COHERENT
 
 CFLAGS = -g -n32 -mips3 -INLINE:NO -c $(ENDIAN)
-LDFLAGS = -mips3 -n32 -lmalloc_cv
+LDFLAGS = -mips3 -n32 -lmalloc
 
 SOURCE = bitstream.cpp sa_encode.yy.c saol_tok_table.cpp sdif.c sdif2mp4.cpp\
 	sdif.h bitstream.h port.h sa_bitstream.h saol.tab.h saol_tok_table.h\
-	Makefile
+	Makefile sdif2mp4.dsp
 
 OBJS =  bitstream.o sa_encode.yy.o saol_tok_table.o sdif.o sdif2mp4.o
 

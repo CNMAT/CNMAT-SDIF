@@ -1,7 +1,7 @@
 /* ISO_HEADER_START */
 
 /* 
- * $Id: bitstream.h,v 1.1 2001/11/27 18:36:18 matt Exp $
+ * $Id: bitstream.h,v 1.2 2001/11/27 21:57:37 matt Exp $
  *
  * Copyright (C) 1997, ISO/IEC
  * 

@@ -86,15 +86,15 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\bitstream.cpp
+SOURCE=.\bitstream.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\sa_encode.yy.c
+SOURCE=.\sa_encode.yy.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\saol_tok_table.cpp
+SOURCE=.\saol_tok_table.cpp
 # End Source File
 # Begin Source File
 
@@ -108,10 +108,6 @@ SOURCE=.\sdif2mp4.cpp
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
-# Begin Source File
-
-SOURCE=.\sdif.h
-# End Source File
 # End Group
 # Begin Group "Resource Files"
 
