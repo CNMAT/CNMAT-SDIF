@@ -50,7 +50,9 @@ commercial licensing opportunities.
 #include "sdif-buf.h"
 #include "sdif-buf-private.h"
 
-#include "ext.h"
+#ifdef WIN_VERSION
+#define isnan _isnan
+#endif
 
 /************************/
 /*                      */
@@ -549,7 +551,7 @@ SDIFresult SDIFbuf_GetValueInMatrix(SDIFmem_Matrix m,
   }
   
   //  finish if found cell with a real value (not a NaN)
-  if(isfinite(*valueFound))
+  if(!isnan(*valueFound))
     return ESDIF_SUCCESS;
 
   //  otherwise, take requested action on NaN data
@@ -820,7 +822,7 @@ SDIFresult SDIFbuf_GetValueNearby(SDIFmem_Frame f,
                                   timeFound);
     else
       //  can't backtrack - this is the latest frame
-      return NULL;
+      return ESDIF_NOT_AVAILABLE;
   }
   
   if(!forwards && (direction == ESDIF_SEARCH_FORWARDS))
@@ -837,7 +839,7 @@ SDIFresult SDIFbuf_GetValueNearby(SDIFmem_Frame f,
                                   timeFound);
     else
       //  can't backtrack - this is the latest frame
-      return NULL;
+      return ESDIF_NOT_AVAILABLE;
   }
   
   //  fail
@@ -985,7 +987,7 @@ static void instance_reset(SDIFbuf_Buffer b)
 
   //  initialize friends instance fields
   bp->head = bp->tail = NULL;
-  bp->streamID = NULL;
+  bp->streamID = 0;
   SDIF_Copy4Bytes(bp->frameType, "----");
   bp->min_time = 0;
   bp->max_time = 0;
@@ -1330,7 +1332,6 @@ SDIFresult SDIFbuf_GetMaxMatrixTime(SDIFbuf_Buffer b, const char *matrixType, sd
 
 SDIFresult SDIFbuf_TimeShiftToZero(SDIFbuf_Buffer b)
 {
-  SDIFresult r;
   SDIFmem_Frame f;
   sdif_float64 tMin;
 
@@ -1347,7 +1348,7 @@ SDIFresult SDIFbuf_TimeShiftToZero(SDIFbuf_Buffer b)
     f = SDIFbuf_GetNextFrame(f);
   }
     
-  return NULL;
+  return ESDIF_SUCCESS;
 }
 
 
