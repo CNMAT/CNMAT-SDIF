@@ -39,6 +39,11 @@ University of California, Berkeley.
  3/30/2000: At IRCAM, fix for zero-matrix frames (Matt)
  6/1/2000: Support 16 bit ints
  6/5/2000: Fixed null-termination check bug
+
+
+ To-do:  Check frame's actual size (according to all the matrix headers) 
+         against the frame header's size field and complain if necessary
+
 */
 
 #include <stdio.h>
@@ -54,13 +59,14 @@ typedef int Boolean;
 void SpewSDIF(char *filename);
 char *MDTstring(sdif_int32 t);
 
-void main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   int i;
 
   /* Parse args */
   for (i = 1; i < argc; i++) {
     SpewSDIF(argv[i]);
   }
+  return 0;
 }
 
 /* A trivial data structure for keeping track of ID numbers in an SDIF file */
@@ -115,7 +121,7 @@ void SpewSDIF(char *filename) {
   r = SDIF_OpenRead(filename, &f);
 
   if (r) {
-    printf("Couldn't open %s: %s\n", filename, SDIF_GetErrorString(r));
+    fprintf(stderr, "Couldn't open %s: %s\n", filename, SDIF_GetErrorString(r));
     return;
   }
 
@@ -160,7 +166,7 @@ void SpewSDIF(char *filename) {
       int j,k;
 
       if (r = SDIF_ReadMatrixHeader(&mh,f)) {
-	printf("Problem reading matrix header: %s\n", SDIF_GetErrorString(r));
+	fprintf(stderr, "Problem reading matrix header: %s\n", SDIF_GetErrorString(r));
 	goto close;
       } 
 
@@ -278,7 +284,7 @@ void SpewSDIF(char *filename) {
 		    }
 		    printf("\"\n");
 		    if (data[j*mh.columnCount + k] != '\0') {
-			printf("Warning: This UTF-8 column is not properly null-terminated\n");
+			fprintf(stderr,"Warning: This UTF-8 column is not properly null-terminated\n");
 		    }
 
 #ifdef PRINT_STRINGS_IN_HEX_TOO

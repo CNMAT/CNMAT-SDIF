@@ -1,42 +1,13 @@
-/* ISO_HEADER_START */
-
-/*********************************************************************
-
-  This software module was originally developed by
-  
-	Eric D. Scheirer (MIT Media Laboratory)
-	
-  in the course of development of the MPEG-4 standard.
-  This software module is an implementation of a part of one or more
-  MPEG-4 tools as specified by the MPEG-4 standard.  ISO/IEC gives users
-  of the MPEG-4 standard free license to this software module or
-  modifications thereof for use in hardware or software products
-  claiming conformance to MPEG-4.  Those intending to use this software
-  module in hardware or software products are advised that its use may
-  infringe existing patents.  The original developer of this software
-  module and his/her company, the subsequent editors and their
-  companies, and ISO/IEC have no liability for use of this software
-  module or modifications thereof in an implementation.  Copyright is
-  not released for non MPEG-4 conforming products. The MIT Media
-  Laboratory retains full right to use the code for its own purpose,
-  assign or donate the code to a third party and to inhibit third
-  parties from using the code for non MPEG-4 conforming products.  This
-  copyright notice must be included in all copies or derivative
-  works. Copyright (c) 1998.
-	 
-***********************************************************************/
-
-/* ISO_HEADER_END */
+/* Original author: Eric D. Scheirer, MIT Media Laboratory
+ *
+ * This source file has been placed in the public domain by its author(s).
+ */
 
 #ifndef _sa_bitstream_h_
 #define _sa_bitstream_h_
 
-#ifdef _WIN32
 #include <vector>
 using namespace std;
-#else
-#include <vector.h>
-#endif 
 
 // Maximum size of parsable arrays
 static const int _F_SIZE = 64;
@@ -89,7 +60,8 @@ public:
     length = strlen(text);
     strcpy(name,text);
   }
-     public: virtual int put(Bitstream& _F_bs) {
+  
+    public: virtual int put(Bitstream& _F_bs) {
         int _F_ret=0;
         _F_bs.putbits(length, 4);
         int _F_name_dim0, _F_name_dim0_end;
@@ -107,11 +79,12 @@ public:
 class sa_symtable {  // 'symtable' in Clause 5.5.2
 public:
     unsigned int length;
-    vector<sym_name> name;
+    vector<sym_name,malloc_alloc> name;
 
 
   public: sa_symtable() {
   length = 0;
+  name.clear();
   }
   
   public: sa_symbol add(char *text) {
@@ -143,6 +116,7 @@ public:
 				  return st;
 	  }
 	  
+		  
 		  
   public: 
 	  virtual int put(Bitstream& _F_bs) {
@@ -179,11 +153,11 @@ public:
             case 0xF0:
                 _F_ret += sym.put(_F_bs);
                 break;
-            case 0xF2:
+            case 0xF1:
                 _F_bs.putfloat(val);
                 break;
-            case 0xF1:
-                _F_bs.putbits(ival, 32);
+            case 0xF2:
+               _F_bs.putbits(ival, 32);
                 break;
             case 0xF3:
                 _F_bs.putbits(length, 8);
@@ -211,16 +185,18 @@ public:
 class orc_file {
 public:
     unsigned int length;
-    vector<orch_token> data;
+    vector<orch_token,malloc_alloc> data;
 
-  orc_file() { length = 0; }
+  orc_file() { 
+	  length = 0; 
+	  data.clear();
+  }
 
   void add(orch_token ot) {
     data.push_back(ot);
     length++;
   }
   
-
     public: virtual int put(Bitstream& _F_bs) {
         int _F_ret=0;
         _F_bs.putbits(length, 16);
@@ -291,12 +267,16 @@ public:
     unsigned int num_pf;
     float *pf;
 
+	table_event() {
+		pf = NULL;
+	}
+
     public: virtual int put(Bitstream& _F_bs) {
         int _F_ret=0;
         _F_ret += tname.put(_F_bs);
-        _F_bs.putbits(tgen, 8);
 		_F_bs.putbits(destroy,1);
 		if (!destroy) {
+			_F_bs.putbits(tgen, 8);
 			_F_bs.putbits(refers_to_sample, 1);
 			if (refers_to_sample)
 				_F_ret += table_sym.put(_F_bs);
@@ -326,7 +306,6 @@ class tempo_event {
 public:
     float tempo;
 
- 
     public: virtual int put(Bitstream& _F_bs) {
         int _F_ret=0;
         _F_bs.putfloat(tempo);
@@ -347,7 +326,17 @@ public:
     tempo_event tempo;
     end_event end;
 
-    public: virtual int put(Bitstream& _F_bs) {
+    public: 
+	
+		score_line() {
+			has_time = 0;
+			use_if_late = 0;
+			priority = 0;
+			time = 0;
+			type = 0;
+		}
+
+	virtual int put(Bitstream& _F_bs) {
         int _F_ret=0;
 	_F_bs.putbits(has_time,1);
 	if (has_time) {
@@ -368,7 +357,7 @@ public:
             case 2:
                 _F_ret += table.put(_F_bs);
                 break;
-            case 3:
+            case 5:
                 _F_ret += tempo.put(_F_bs);
                 break;
             case 4:
@@ -383,7 +372,7 @@ public:
 class score_file {
 public:
     unsigned int num_lines;
-    vector<score_line *>lines;
+    vector<score_line *,malloc_alloc>lines;
 
 public: score_file() { num_lines = 0;  }
     
@@ -392,6 +381,7 @@ public: score_file() { num_lines = 0;  }
     lines.push_back(s);
   }
  
+
     public: virtual int put(Bitstream& _F_bs) {
         int _F_ret=0;
         _F_bs.putbits(num_lines, 20);
@@ -409,10 +399,11 @@ class midi_event {
    
 public:
  unsigned int length;
-  vector <unsigned char> data;
+  vector <unsigned char,malloc_alloc> data;
 
   midi_event(void) {
     length = 0;
+	data.clear();
   }
   
     public: virtual int put(Bitstream& _F_bs) {
@@ -430,9 +421,9 @@ public:
 class midi_file {
 public:
     unsigned int length;
-    vector <unsigned char> data;
+    vector <unsigned char,malloc_alloc> data;
 
-     public: virtual int put(Bitstream& _F_bs) {
+    public: virtual int put(Bitstream& _F_bs) {
         int _F_ret=0;
         _F_bs.putbits(length, 32);
         int _F_data_dim0, _F_data_dim0_end;
@@ -480,14 +471,26 @@ public:
     unsigned int has_base;
     float basecps;
     unsigned int float_sample;
-    vector<float> fs_data;
-    vector<int> s_data;
+    vector<float,malloc_alloc> fs_data;
+    vector<int,malloc_alloc> s_data;
     
- public: 
+ public: void save(char *);
 
   sample() {
     length = 0;
+	fn[0] = '\0';
+	has_srate = 0;
+	srate = 0;
+	has_loop = 0;
+	loopstart=0;
+	loopend = 0;
+	has_base = 0;
+	basecps = 0;
+	float_sample = 0;
+	fs_data.clear();
+	s_data.clear();
    }
+      
   virtual int put(Bitstream& _F_bs) {
     int _F_ret=0;
     _F_ret += sample_name_sym.put(_F_bs);
@@ -535,12 +538,12 @@ class sbf {
 public:
   
   int length;
-  vector<char> data;
+  vector<char,malloc_alloc> data;
   
   sbf() {
     length = 0;
    }
- 
+  
 public:
   virtual int put(Bitstream& _F_bs) {
     int _F_ret=0,i;
@@ -563,6 +566,7 @@ public:
     sample *samp;
     sa_symtable *sym;
     sbf *sample_bank;
+
 public: virtual int put(Bitstream& _F_bs) {
     int _F_ret=0;
     _F_parse = 1;
@@ -605,6 +609,10 @@ public:
 	midi_event midi_ev;
 	sample samp;
 	int event_type;
+
+	au_event() {
+		event_type = 0;
+	}
 } ;
 
 
@@ -613,15 +621,21 @@ public:
   unsigned int num_events;
   float dts;
   unsigned int out_of_data;
-  vector<au_event *> events;
+  vector<au_event *,malloc_alloc> events;
 
 public:
+	SA_access_unit() {
+		num_events = 0;
+		dts = 0;
+		out_of_data = 0;
+		events.clear();
+	}
 
   virtual int put(Bitstream& _F_bs) {
     int _F_ret=0;
 	int i;
    
-	_F_ret += _F_bs.putfloat(dts);    // VIOLATION
+	_F_ret += (int)_F_bs.putfloat(dts);    // VIOLATION
 
 	for (i=0;i!=num_events;i++) {
 		
@@ -648,18 +662,11 @@ public:
     return _F_ret;
   }
 
-  SA_access_unit() {
-	  num_events = 0;
-	  events.clear();
-	  dts = 0;
-	  out_of_data = 0;
-  }
 };
 
 bool operator<(SA_access_unit a, SA_access_unit b) {
 	// NB backwards since we want lowest "priority" (time) at the front
 	return a.dts > b.dts;
 }
-
 
 #endif /* ! _sa_bitstream_h_ */

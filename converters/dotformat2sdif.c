@@ -64,7 +64,7 @@ Boolean ConvertFormat(char *filename, formatType t);
 
 #define MAX_NUM_FILES 1000
 
-void main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   int i, numFiles;
   char *files[MAX_NUM_FILES];
   formatType types[MAX_NUM_FILES];
@@ -104,6 +104,7 @@ void main(int argc, char *argv[]) {
 	unlink(files[i]);
     }
   }
+  return 0;
 }
 
 

@@ -1,35 +1,11 @@
-/* ISO_HEADER_START */
-
-/* 
- * Copyright (C) 1997, ISO/IEC
- * 
- * The software module contained in this file was originally developed by
- * Prof. Alexandros Eleftheriadis and Yihan Fang (Columbia University) as part
- * of the Flavor run-time library (see http://www.ee.columbia.edu/flavor).
- * Copyright has been transferred to ISO/IEC for inclusion in the MPEG-4
- * Reference Software (ISO/IEC 14496-5) distribution. ISO/IEC gives users of
- * this code free license to this software or modifications thereof for use in
- * hardware or software products claiming conformance to one or more parts of
- * the MPEG-4 (ISO/IEC 14496) series of specifications. Those intending to use
- * this Reference Software in hardware or software products are advised that
- * its use may infringe existing patents. The original developer of this
- * software module and his company, the subsequent editors and their
- * companies, and ISO/IEC have no liability for use of this software or
- * modifications thereof in an implementation. Copyright is not released for
- * imlementations that do not comply to one or more parts of the MPEG-4
- * (ISO/IEC 14496) series of specifications. Columbia University retains full
- * right to use the code for its own purpose, including assignment or
- * donatation of this code to a third party.
- * 
- * This copyright notice must be included in all copies or derivative works.
- * 
- * For more information or to receive updated versions of this module, contact
- * Prof. Alexandros Eleftheriadis at eleft@ee.columbia.edu.
+/* Original author: Eric D. Scheirer, MIT Media Laboratory
+ *
+ * This source file has been placed in the public domain by its author(s).
  */
 
-/* ISO_HEADER_END */
-
 /* bitstream.cpp: low-level routines for parsing bitstream data */
+
+
 
 // bitstream IO implementation
 

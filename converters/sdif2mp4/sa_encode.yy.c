@@ -1,3 +1,9 @@
+/* Original author: Eric D. Scheirer, MIT Media Laboratory
+ *
+ * This source file has been placed in the public domain by its author(s).
+ */
+
+
 # include "stdio.h"
 # define U(x) ((unsigned char)(x))
 # define NLSTATE yyprevious=YYNEWLINE
@@ -52,12 +58,13 @@ struct yysvf *yyestate;
 extern struct yysvf yysvec[], *yybgin;
 
 # line 3 "sa_encoder.lex"
-/* $Id: sa_encode.yy.c,v 1.3 2001/11/27 22:23:53 matt Exp $ */
+/* $Id: sa_encode.yy.c,v 1.4 2001/11/29 00:35:14 matt Exp $ */
 
 # line 4 "sa_encoder.lex"
 /* $Log: sa_encode.yy.c,v $
- * Revision 1.3  2001/11/27 22:23:53  matt
- * From /disk5/disk6/people/matt/sdif/new-saol
+ * Revision 1.4  2001/11/29 00:35:14  matt
+ * From /disk42/sdif/src/, the most recent versions as of when this was all
+ * entered into CVS.
  *
 # Revision 1.2  1998/05/06  21:44:26  eds
 # FCD version.
@@ -1602,7 +1609,7 @@ char yyextra[] = {
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,
 0};
-#ident	"$Revision: 1.3 $"
+#ident	"$Revision: 1.4 $"
 
 int yylineno =1;
 # define YYU(x) x

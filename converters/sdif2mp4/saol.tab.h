@@ -1,3 +1,8 @@
+/* Original author: Eric D. Scheirer, MIT Media Laboratory
+ *
+ * This source file has been placed in the public domain by its author(s).
+ */
+
 # define IDENT 257
 # define INTGR 258
 # define NUMBER 259

@@ -1,32 +1,7 @@
-/* ISO_HEADER_START */
-
-/*********************************************************************
-
-  This software module was originally developed by
-  
-	Eric D. Scheirer (MIT Media Laboratory)
-	
-  in the course of development of the MPEG-4 standard.
-  This software module is an implementation of a part of one or more
-  MPEG-4 tools as specified by the MPEG-4 standard.  ISO/IEC gives users
-  of the MPEG-4 standard free license to this software module or
-  modifications thereof for use in hardware or software products
-  claiming conformance to MPEG-4.  Those intending to use this software
-  module in hardware or software products are advised that its use may
-  infringe existing patents.  The original developer of this software
-  module and his/her company, the subsequent editors and their
-  companies, and ISO/IEC have no liability for use of this software
-  module or modifications thereof in an implementation.  Copyright is
-  not released for non MPEG-4 conforming products. The MIT Media
-  Laboratory retains full right to use the code for its own purpose,
-  assign or donate the code to a third party and to inhibit third
-  parties from using the code for non MPEG-4 conforming products.  This
-  copyright notice must be included in all copies or derivative
-  works. Copyright (c) 1998.
-	 
-***********************************************************************/
-
-/* ISO_HEADER_END */
+/* Original author: Eric D. Scheirer, MIT Media Laboratory
+ *
+ * This source file has been placed in the public domain by its author(s).
+ */
 
 int is_builtin(char *);
 int lexel_map(long);

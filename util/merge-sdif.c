@@ -330,7 +330,7 @@ static sdif_int32 FindUnusedStreamID(sdif_int32 inStreamID) {
     sdif_int32 try;
     streamRenameRecord *p;
 
-    for (try = inStreamID + 100; 1; ++try) {
+    for (try = inStreamID + 1; 1; ++try) {
 	for (p = outTable[hashFunction(try)]; p != 0; p=p->nextOut) {
 	    if (p->outStreamID == try) {
 		goto tryagain;

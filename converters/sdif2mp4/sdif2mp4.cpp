@@ -11,15 +11,11 @@
  *
  * Original author: Eric D. Scheirer, MIT Media Laboratory
  * 
- * This source file is copyright (c) 1999 The Media Laboratory
- * and the Massachusetts Institute of Technology.  Permission is
- * granted for free use in research and non-commercial projects;
- * written permission is required for any use in commercial projects.
+ * This source file has been placed in the public domain by its author(s).
  *
  * History: 
  *
  *  15 Jun 1999: Version 1.0 by Eric 
- *   5 Oct 1999: Version 1.1 by Matt: new SDIF library
  *
  **************************************************************/
 
@@ -30,7 +26,7 @@
 /* default place to look for the synthesis code */
 #define DEFAULT_SDIF_ORC_NAME "sdif.saol"
 /* default control (frame) rate of the synthesizer, in Hz */
-#define DEFAULT_KRATE 200.0
+#define DEFAULT_KRATE 882.0
 /* maximum number of streams in a file */
 #define MAX_STREAMS 20
 /* maximum number of simultaneous frames (has to match up with
@@ -79,7 +75,7 @@ struct frame_type_table {
 
 extern "C" {
 #include "sdif.h"   /* SDIF-reading library */
-#include "sdif-mem.h"   /* SDIF-in-memory library */
+#include "sdif-mem.h"   /* SDIF-reading library */
 #include "saol.tab.h" /* lexical analysis tokens */
 extern FILE *yyin; /* 'yy' keywords are in sa_encode.yy.c */
 int yylex(void); 
@@ -103,7 +99,7 @@ struct cmdinfo {
 
 class wavetable {
 private:
-	vector <sa_real> data; /* all the data points in this table */
+	vector <sa_real,malloc_alloc> data; /* all the data points in this table */
 	int instr; /* which note the wavetable goes to */
 	int index; /* the number of this wavetable */
 	sa_real time; /* the delivery time of this table */
@@ -114,6 +110,8 @@ public:
 	/* put an int  in the table */
 	void push(sdif_float32);
 	/* put a float in the table */
+	void push(long);
+	/* put a long in the table */
 	void push(void *, int, int, int); 
 	/* put a whole matrix in the table */
 	void make_events(SA_access_unit *);
@@ -138,12 +136,13 @@ void reset_table_index();
 int next_table_index();
 char *get_instr_id_label(int id);
 char *get_table_name(int index);
-void fatal_SDIF_error(char *loc);
+void fatal_SDIF_error(char *loc, SDIFresult r);
 void fatal_error(char *s);
 void *malloc_wrapper(int size);
 void free_wrapper(void *p, int size);
 
 void main(int argc, char *argv[]) {
+	SDIFresult r;
 	Bitstream *out;
 	cmdinfo *cmd;
 	FILE *SDIFfp;
@@ -154,17 +153,19 @@ void main(int argc, char *argv[]) {
 
 	/* initialize and open SDIF processing */
 
-	if (SDIF_Init()) { /* nonzero is error */
-		fatal_SDIF_error("initializing SDIF");
+	if (r = SDIF_Init()) { 
+		/* nonzero is error */
+		fatal_SDIF_error("initializing SDIF", r);
 	}
-	if (SDIFmem_Init(malloc_wrapper, free_wrapper)) {
-	    fatal_SDIF_error("initializing SDIF-in-memory library");
+	if (r = SDIFmem_Init(malloc_wrapper,free_wrapper)) { 
+		/* nonzero is error */
+		fatal_SDIF_error("initializing SDIF memory", r);
 	}
 
 
-	if (!(SDIFfp = SDIF_OpenRead(cmd->sdif))) {
+	if (r = SDIF_OpenRead(cmd->sdif, &SDIFfp)) {
 		sprintf(s,"opening '%s'",cmd->sdif);
-		fatal_SDIF_error(s);
+		fatal_SDIF_error(s, r);
 	}
 
 	/* open the bitstream file */
@@ -358,17 +359,18 @@ struct stream_table_struct {
 
 void deal_with_SDIF(FILE *SDIF,cmdinfo *cmd,Bitstream *out) {
 	SDIF_FrameHeader fh;
-	int done = 0, rtn, ct = 0; 
+	int done = 0, ct = 0; 
 	sdif_float64 curtime = 0;
+	SDIFresult rtn;
 
 	stream_table.len = 0;
 
 	while (!done) { /* breaks out at EOF */
 
 		/* get the next frame */
-		rtn	= SDIF_ReadFrameHeader(&fh, SDIF);
-		if (rtn < 0) fatal_SDIF_error("reading frame");
-		if (!rtn) /* EOF */ { done = 1;  break; }
+		rtn = SDIF_ReadFrameHeader(&fh, SDIF);
+		if (rtn == ESDIF_END_OF_DATA)  {/* EOF */ done = 1;  break; }
+		if (rtn) fatal_SDIF_error("reading frame", rtn);
 		
 		/* check if this frame is at the same time as the previous one */
 		if (fh.time > curtime + cmd->kpd) { /* can reset tables */ 
@@ -386,7 +388,8 @@ void deal_with_SDIF(FILE *SDIF,cmdinfo *cmd,Bitstream *out) {
 }
 
 void convert_frame_to_table(SDIF_FrameHeader fh, FILE *SDIF, Bitstream *out) {
-	int stream_instr, table_index, rtn;
+	SDIFresult rtn;
+	int stream_instr, table_index;
 	wavetable *w; 
 	SA_access_unit au;
 	char s[100];
@@ -397,8 +400,8 @@ void convert_frame_to_table(SDIF_FrameHeader fh, FILE *SDIF, Bitstream *out) {
 
 	if (!useful_frame_type(fh.frameType)) {
 		rtn = SDIF_SkipFrame(&fh,SDIF);
-		if (rtn != 1)
-			fatal_SDIF_error("skipping frame");
+		if (rtn)
+			fatal_SDIF_error("skipping frame", rtn);
 		return;
 	}
 
@@ -421,8 +424,8 @@ void convert_frame_to_table(SDIF_FrameHeader fh, FILE *SDIF, Bitstream *out) {
 	w->push(fh.matrixCount); /* number of matrixes */
 
 
-	if (!(f = SDIFmem_ReadFrameContents(&fh,SDIF,NULL,NULL)))
-		fatal_SDIF_error("reading frame contents");
+	if (rtn = SDIFmem_ReadFrameContents(&fh,SDIF,&f))
+		fatal_SDIF_error("reading frame contents", rtn);
 
 	for (m=f->matrices;m;m=m->next) {
 		/* frame-matrix tag */
@@ -454,8 +457,13 @@ void convert_frame_to_table(SDIF_FrameHeader fh, FILE *SDIF, Bitstream *out) {
 
 	w->make_events(&au);
 
+	delete w;
+
 	au.dts = fh.time;
 	au.put(*out);
+
+	au.events.clear();
+
 	return;
 }
 	
@@ -465,7 +473,7 @@ int useful_frame_type(char *type) {
 	int i;
 
 	for (i=0;i!=NUM_FRAME_TYPES;i++) {
-		if (SDIF_Str4Eq(frame_def[i].SDIFname,type)) return 1;
+		if (SDIF_Char4Eq(frame_def[i].SDIFname,type)) return 1;
 	}
 	
 	return 0;
@@ -477,7 +485,7 @@ char *get_streamType_instr(char *type) {
 	int i;
 
 	for (i=0;i!=NUM_FRAME_TYPES;i++) {
-		if (SDIF_Str4Eq(frame_def[i].SDIFname,type)) 
+		if (SDIF_Char4Eq(frame_def[i].SDIFname,type)) 
 			return frame_def[i].instr;
 	}
 	return NULL;
@@ -494,7 +502,7 @@ ftypes ft_to_tag(char *type) {
 	int i;
 
 	for (i=0;i!=NUM_FRAME_TYPES;i++) {
-		if (SDIF_Str4Eq(frame_def[i].SDIFname,type)) 
+		if (SDIF_Char4Eq(frame_def[i].SDIFname,type)) 
 			return frame_def[i].ftype;
 	}
 	return UNK_FT;
@@ -507,10 +515,10 @@ int matrix_type_tag(char *ft, char *mt) {
 
 	for (i=0;i!=NUM_FRAME_TYPES;i++) {
 		/* look up the frame type */
-		if (SDIF_Str4Eq(frame_def[i].SDIFname,ft))  {
+		if (SDIF_Char4Eq(frame_def[i].SDIFname,ft))  {
 			/* look for the matrix name within the list of matrix types */
 			for (j=0;j!=frame_def[i].num_mtypes;j++) {
-				if (SDIF_Str4Eq(frame_def[i].matname[j],mt)) {
+				if (SDIF_Char4Eq(frame_def[i].matname[j],mt)) {
 					return frame_def[i].mtag[j];
 				}
 			}
@@ -610,6 +618,11 @@ void wavetable::push(sdif_float32 f) {
 	data.push_back((sa_real) f);
 }
 
+void wavetable::push(long l) {
+	/* add a long to the end of the table */
+	data.push_back((sa_real) l);
+}
+
 void wavetable::push(void *vdata, int r, int c, int dataType) {
 	/* add a whole matrix to the end of the table */
 	int i,j;
@@ -637,7 +650,7 @@ void wavetable::make_events(SA_access_unit *AU) {
 	int i;
 
 	// <time> control <instr label> changed <index>
-
+	
 	ctrl = new au_event;
 	ctrl->event_type = 0; /* score event */
 	ctrl->score_ev.type = 1; /* control event */
@@ -664,7 +677,7 @@ void wavetable::make_events(SA_access_unit *AU) {
 	table->score_ev.table.refers_to_sample = 0;
 	table->score_ev.table.tgen = is_builtin("data");
 	table->score_ev.table.tname = symtab.add(get_table_name(index));
-	table->score_ev.table.pf = new sa_real [data.size()];
+	table->score_ev.table.pf = new sa_real [data.size()+1];
 	table->score_ev.table.pf[0] = data.size();
 
 	for (i=0;i!=data.size();i++)
@@ -719,10 +732,10 @@ char *get_table_name(int index) {
 	return(strdup(s));
 }
 
-void fatal_SDIF_error(char *loc) {
+void fatal_SDIF_error(char *loc, SDIFresult r) {
 	char *s;
 	
-	s = SDIF_GetLastErrorString();
+	s = SDIF_GetErrorString(r);
 
 	printf("Fatal SDIF error while %s: %s.\n",loc,s);
 	exit(1);

@@ -1,30 +1,46 @@
+#if 0
+
+/* 
+Copyright (c) 1997,1998,1999.  The Regents of the University of California
+(Regents).  All Rights Reserved.
+
+Permission to use, copy, modify, and distribute this software and its
+documentation, without fee and without a signed licensing agreement, is hereby
+granted, provided that the above copyright notice, this paragraph and the
+following two paragraphs appear in all copies, modifications, and
+distributions.  Contact The Office of Technology Licensing, UC Berkeley, 2150
+Shattuck Avenue, Suite 510, Berkeley, CA 94720-1620, (510) 643-7201, for
+commercial licensing opportunities.
+
+Written by Matt Wright, The Center for New Music and Audio Technologies,
+University of California, Berkeley.
+
+     IN NO EVENT SHALL REGENTS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
+     SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
+     ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
+     REGENTS HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+     REGENTS SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT
+     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+     FOR A PARTICULAR PURPOSE. THE SOFTWARE AND ACCOMPANYING
+     DOCUMENTATION, IF ANY, PROVIDED HEREUNDER IS PROVIDED "AS IS".
+     REGENTS HAS NO OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES,
+     ENHANCEMENTS, OR MODIFICATIONS.
+*/
+
+ i2sdif.c
+
+ Converts IRCAM FFT result (.i) (.pics) files to sdif
+
+ Amar Chaudhary, 11/2/98
+ Updated 10/13/99 by Matt Wright
+
+*/
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "sdif.h"
-
-
-/*
- * Copyright(c) 1997,1998 Regents of the University of California.
- * All rights reserved.
- * The name of the University may not be used to endorse or promote
- * products derived from this software without specific prior written
- * permission.  THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE
- * IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE.
-
- pics2sdif.c
-
- Converts spectral peak (.pics) files to sdif
- Special thanks to the genius who decided that .pics files would measure
- time in samples instead of seconds!
-
- Amar Chaudhary, 11/2/98
-
-*/
-
 
 int main (int argc, char *argv[]) {
   int	i,firstfile;
@@ -129,3 +145,4 @@ int main (int argc, char *argv[]) {
 
   return 0;
 }
+#endif

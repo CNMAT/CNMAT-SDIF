@@ -42,7 +42,6 @@ University of California, Berkeley.
 #include <stdio.h>
 #include <string.h>
 #include "sdif.h"
-#include "sdif-types.h"
 
 
 
