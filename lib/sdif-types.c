@@ -1,5 +1,5 @@
 /* 
-Copyright (c) 1996, 1997, 1998, 1999.  The Regents of the University of
+Copyright (c) 1996, 1997, 1998, 1999, 2000.  The Regents of the University of
 California (Regents).  All Rights Reserved.
 
 Permission to use, copy, modify, and distribute this software and its
@@ -33,6 +33,7 @@ Technologies, University of California, Berkeley.
    SDIF spec: http://www.cnmat.berkeley.edu/SDIF/   
 
    Split off from sdif.[ch] on 10/11/99
+   MW added lots of 1TRC stuff 6/27/2000 
 */
 
 
@@ -40,6 +41,14 @@ Technologies, University of California, Berkeley.
 #include "sdif.h"
 #include "sdif-types.h"
 #include <math.h>
+
+
+
+/* Stupid MSVC feature -AC 7/19/2000 */
+#ifndef M_PI
+#define M_PI        3.14159265358979323846
+#endif
+
 
 sdif_float32 WrapPhase32(sdif_float32 input_phase) {
     sdif_float32 r;
@@ -60,6 +69,22 @@ sdif_float64 WrapPhase64(sdif_float64 input_phase) {
     if (r > M_PI) return r-2*M_PI;
     return r;
 }
+
+#if 0
+static float
+ReverseEngineerPhase(float desiredEndingPhase,
+		     float constantFreq,
+		     float time) {
+    /* In a birth, we want to reach the nominal initial phase at the
+       end of the interval, so assuming constant frequency over the
+       interval, figure out what the initial phase needs to be so we'll
+       reach the target. */
+
+    float phaseChange = constantFreq * time * 2.0 * M_PI;
+
+    return fmod(desiredEndingPhase - phaseChange, 2.0*M_PI);
+}
+#endif
 
 
 /*****************************************/
@@ -133,6 +158,7 @@ sdif_int32 SizeOf1TRCFrame(int numTracks) {
 }
 
 
+
 /* 1RES */
 SDIFresult SDIF_WriteRowOf1RES(SDIF_RowOf1RES *row, FILE *f) {
     return SDIF_Write4(row,4,f);
@@ -171,4 +197,5 @@ SDIFresult SDIF_WriteRowOf1FQ0(SDIF_RowOf1FQ0 *row, FILE *f) {
 SDIFresult SDIF_ReadRowOf1FQ0(SDIF_RowOf1FQ0 *row, FILE *f) {
         return SDIF_Read4(row,2,f);
 }
+
 

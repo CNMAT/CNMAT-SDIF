@@ -177,7 +177,7 @@ void Test(char *infilename, char *outfilename) {
 }
 
 
-void main(int argc, char **argv) {
+int main(int argc, char **argv) {
     if (argc != 3) {
 	printf("Test in.sdif out.sdif\n");
 	return;

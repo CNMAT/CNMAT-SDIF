@@ -45,9 +45,9 @@ Technologies, University of California, Berkeley.
 
 
 
-/* Global variables local to this file */
-static void *(*my_malloc)(int numBytes);
-static void (*my_free)(void *memory, int numBytes);
+/* The user-supplied malloc/free procedures.  Also used in sdif-types.c */
+void *(*my_malloc)(int numBytes);
+void (*my_free)(void *memory, int numBytes);
 
 
 SDIFresult SDIFmem_Init(void *(*MemoryAllocator)(int numBytes), 
@@ -160,7 +160,6 @@ SDIFresult SDIFmem_ReadFrameContents(SDIF_FrameHeader *head, FILE *f,
     SDIFmem_Matrix matrix;
     int i, sz;
     SDIFmem_Matrix *prevNextPtr;
-    int paddingNeeded;
 
     result = (SDIFmem_Frame) (*my_malloc)(sizeof(*result));
     
@@ -174,7 +173,7 @@ SDIFresult SDIFmem_ReadFrameContents(SDIF_FrameHeader *head, FILE *f,
     result->matrices = 0;
     
     prevNextPtr = &(result->matrices);
-    
+
     for (i = 0; i < head->matrixCount; ++i) {
         matrix = SDIFmem_CreateEmptyMatrix();
         if (matrix == 0) {
@@ -189,12 +188,14 @@ SDIFresult SDIFmem_ReadFrameContents(SDIF_FrameHeader *head, FILE *f,
         prevNextPtr = &(matrix->next);
         matrix->next = 0;
 
+
         if (r = SDIF_ReadMatrixHeader(&(matrix->header), f)) {
             SDIFmem_FreeFrame(result);
             return r;
         }
-        
+
         sz = SDIF_GetMatrixDataSize(&(matrix->header));
+
 	/* Note: SDIF_GetMatrixDataSize includes padding bytes. */
 
 	if (sz == 0) {
@@ -211,15 +212,11 @@ SDIFresult SDIFmem_ReadFrameContents(SDIF_FrameHeader *head, FILE *f,
 	    SDIFmem_FreeFrame(result);
             return r;
         }
-	
-	paddingNeeded = SDIF_PaddingRequired(&(matrix->header));
-	if (paddingNeeded) {
-	    /* Read through the padding bytes and throw them away. */
-	    char pad[8];
-	    if (r = SDIF_Read1(pad, paddingNeeded, f)) return r;
-	}
-	
+
+	/* Note: SDIF_ReadMatrixData advanced the file pointer past any 
+	   padding bytes. */
     }
+
     *putithere = result;
     return ESDIF_SUCCESS;
 }

@@ -505,7 +505,7 @@ SDIFresult SDIF_Write2(const void *block, size_t n, FILE *f) {
 	/* Too big for buffer */
 	int capacity = BUFSIZE >> 1;
 	if (r = SDIF_Write2(block, capacity, f)) return r;
-	return SDIF_Write2(((char *) block) + capacity<<1, n-capacity, f);
+	return SDIF_Write2(((char *) block) + (capacity<<1), n-capacity, f);
     }
 
     for (i = 0; i < m; i += 2) {
@@ -531,7 +531,7 @@ SDIFresult SDIF_Write4(const void *block, size_t n, FILE *f) {
     if ((n << 2) > BUFSIZE) {
 	int capacity = BUFSIZE >> 2;
 	if (r = SDIF_Write4(block, capacity, f)) return r;
-	return SDIF_Write4(((char *) block) + capacity<<2, n-capacity, f);
+	return SDIF_Write4(((char *) block) + (capacity<<2), n-capacity, f);
     }
 
     for (i = 0; i < m; i += 4) {

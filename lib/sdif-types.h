@@ -1,5 +1,5 @@
 /* 
-Copyright (c) 1996, 1997, 1998, 1999.  The Regents of the University of
+Copyright (c) 1996, 1997, 1998, 1999, 2000.  The Regents of the University of
 California (Regents).  All Rights Reserved.
 
 Permission to use, copy, modify, and distribute this software and its
@@ -33,6 +33,9 @@ Technologies, University of California, Berkeley.
    Note that this module assumes sdif_float32 data.
 
    SDIF spec: http://www.cnmat.berkeley.edu/SDIF/   
+
+
+   You must include sdif.h and sdif-mem.h before this file.
 */
 
 
@@ -47,11 +50,20 @@ sdif_float32 WrapPhase32(sdif_float32 input_phase);
 sdif_float64 WrapPhase64(sdif_float64 input_phase);
 
 
+/****** 1HRM ******/
+
+typedef struct {
+    sdif_float32 partialnumber, freq, amp, phase;
+} SDIF_RowOf1HRM;
+
+
 /****** 1TRC ******/
 
 typedef struct {
     sdif_float32 index, freq, amp, phase;
 } SDIF_RowOf1TRC;
+
+
 
 SDIFresult SDIF_WriteRowOf1TRC(SDIF_RowOf1TRC *row, FILE *f);
 SDIFresult SDIF_ReadRowOf1TRC(SDIF_RowOf1TRC *row, FILE *f);
