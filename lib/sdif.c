@@ -98,7 +98,7 @@ static char *error_string_array[] = {
     "Bad SDIF header",
     "Frame header's size is too low for time tag and stream ID",
     "fseek() failed while skipping over data",
-    "Unknown matrix data type encountered in SDIF_WriteFrame().",
+    "Unknown matrix data type.",
     (char *) NULL,   /* this will be set by SizeofSanityCheck() */
     "End of data",
     "Bad SDIF matrix header",
@@ -111,6 +111,8 @@ static char *error_string_array[] = {
 };
 
 char *SDIF_GetErrorString(SDIFresult error_code) {
+    if (error_code == ESDIF_SEE_ERRNO) return strerror(errno);
+
     return error_string_array[error_code];
 }
 
@@ -312,10 +314,12 @@ SDIFresult SDIF_SkipFrame(const SDIF_FrameHeader *head, FILE *f) {
 SDIFresult SDIF_ReadMatrixHeader(SDIF_MatrixHeader *m, FILE *f) {
 #ifdef LITTLE_ENDIAN
     SDIFresult r;
+
     if (r = SDIF_Read1(&(m->matrixType),4,f)) return r;
     if (r = SDIF_Read4(&(m->matrixDataType),1,f)) return r;
     if (r = SDIF_Read4(&(m->rowCount),1,f)) return r;
     if (r = SDIF_Read4(&(m->columnCount),1,f)) return r;
+
     return ESDIF_SUCCESS;
 #else
     if (fread(m, sizeof(*m), 1, f) == 1) {
@@ -389,14 +393,19 @@ SDIF_ReadMatrixData(void *putItHere, FILE *f, const SDIF_MatrixHeader *head) {
     switch (datumSize) {
         case 1:
             if (r = SDIF_Read1(putItHere, numItems, f)) return r;
+	    break;
         case 2:
             if (r = SDIF_Read2(putItHere, numItems, f)) return r;
+	    break;
         case 4:
             if (r = SDIF_Read4(putItHere, numItems, f)) return r;
+	    break;
         case 8:
             if (r = SDIF_Read8(putItHere, numItems, f)) return r;
+	    break;
         default:
             return ESDIF_BAD_MATRIX_DATA_TYPE;
+	    break;
     }
 #else
     if (fread(putItHere, datumSize, numItems, f) != numItems) {
@@ -494,9 +503,9 @@ SDIFresult SDIF_Write2(const void *block, size_t n, FILE *f) {
 
     if ((n << 1) > BUFSIZE) {
 	/* Too big for buffer */
-	int num = BUFSIZE >> 1;
-	if (r = SDIF_Write2(block, num, f)) return r;
-	return SDIF_Write2(((char *) block) + num, n-num, f);
+	int capacity = BUFSIZE >> 1;
+	if (r = SDIF_Write2(block, capacity, f)) return r;
+	return SDIF_Write2(((char *) block) + capacity<<1, n-capacity, f);
     }
 
     for (i = 0; i < m; i += 2) {
@@ -520,9 +529,9 @@ SDIFresult SDIF_Write4(const void *block, size_t n, FILE *f) {
     int i, m = 4*n;
 
     if ((n << 2) > BUFSIZE) {
-	int num = BUFSIZE >> 2;
-	if (r = SDIF_Write4(block, num, f)) return r;
-	return SDIF_Write4(((char *) block) + num, n-num, f);
+	int capacity = BUFSIZE >> 2;
+	if (r = SDIF_Write4(block, capacity, f)) return r;
+	return SDIF_Write4(((char *) block) + capacity<<2, n-capacity, f);
     }
 
     for (i = 0; i < m; i += 4) {
@@ -583,9 +592,9 @@ SDIFresult SDIF_Read2(void *block, size_t n, FILE *f) {
     int i, m = 2*n;
 
     if ((n << 1) > BUFSIZE) {
-	int num = BUFSIZE >> 1;
-	if (r = SDIF_Read2(block, num, f)) return r;
-	return SDIF_Read2(((char *) block) + num, n-num, f);
+	int capacity = BUFSIZE >> 1;
+	if (r = SDIF_Read2(block, capacity, f)) return r;
+	return SDIF_Read2(((char *) block) + (capacity<<1),  n-capacity, f);
     }
 
     if (fread(p,2,n,f) != n) return ESDIF_READ_FAILED;
@@ -610,18 +619,18 @@ SDIFresult SDIF_Read4(void *block, size_t n, FILE *f) {
     int i, m = 4*n;
 
     if ((n << 2) > BUFSIZE) {
-	int num = BUFSIZE >> 2;
-	if (r = SDIF_Read4(block, num, f)) return r;
-	return SDIF_Read4(((char *) block) + num, n-num, f);
+	int capacity = BUFSIZE >> 2;	/* # of 4-byte objects the buffer can hold */
+	if (r = SDIF_Read4(block, capacity, f)) return r;
+	return SDIF_Read4(((char *) block) + (capacity<<2), n-capacity, f);
     }
 
     if (fread(p,4,n,f) != n) return ESDIF_READ_FAILED;
 
     for (i = 0; i < m; i += 4) {
 	q[i] = p[i+3];
-	q[i+3] = p[i];
 	q[i+1] = p[i+2];
 	q[i+2] = p[i+1];
+	q[i+3] = p[i];
     }
 
     return ESDIF_SUCCESS;
@@ -640,9 +649,9 @@ SDIFresult SDIF_Read8(void *block, size_t n, FILE *f) {
     int i, m = 8*n;
 
     if ((n << 3) > BUFSIZE) {
-	int num = BUFSIZE >> 3;
-	if (r = SDIF_Read8(block, num, f)) return r;
-	return SDIF_Read8(((char *) block) + num, n-num, f);
+	int capacity = BUFSIZE >> 3;
+	if (r = SDIF_Read8(block, capacity, f)) return r;
+	return SDIF_Read8(((char *) block) + (capacity<<3), n-capacity, f);
     }
 
     if (fread(p,8,n,f) != n) return ESDIF_READ_FAILED;

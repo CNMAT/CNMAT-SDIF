@@ -363,7 +363,7 @@ void SDIF_Copy4Bytes(char *target, const char *string);
    conversion when necessary. */
 
 
-#if defined(__WIN32__) || defined(_WINDOWS)
+#if defined(__WIN32__) || defined(_WINDOWS) || defined(__LINUX__)
 #define LITTLE_ENDIAN  1
 #else 
     /* Insert other checks for your architecture here if it's little endian. */
