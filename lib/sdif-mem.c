@@ -209,6 +209,16 @@ SDIFresult SDIFmem_ReadFrameContents(SDIF_FrameHeader *head, FILE *f,
 	    SDIFmem_FreeFrame(result);
             return r;
         }
+				/* mdb added: possible padding bytes where not skipped */
+				{
+			    int paddingNeeded = SDIF_PaddingRequired(&(matrix->header));
+			    if (paddingNeeded) {
+						char pad[8] = "\0\0\0\0\0\0\0\0";
+						r = SDIF_Read1(pad, paddingNeeded, f);
+            if (r) return r;
+			    }
+				/* end mdb */
+				}
     }
     *putithere = result;
     return ESDIF_SUCCESS;

@@ -248,13 +248,18 @@ SDIFresult SDIF_WriteGlobalHeader(const SDIF_GlobalHeader *h, FILE *f) {
 SDIFresult SDIF_ReadFrameHeader(SDIF_FrameHeader *fh, FILE *f) {
 #ifdef LITTLE_ENDIAN
     SDIFresult r;
-
+/* mdb change. SDIF_Read1 does not result number of bytes read, but
+** an error code.
     if (SDIF_Read1(&(fh->frameType),4,f) != 4) {
     	if (feof(f)) {
 	    return ESDIF_END_OF_DATA;
 	}
 	return ESDIF_READ_FAILED;
     }
+**/
+  if (r = SDIF_Read1(&(fh->frameType),4,f)) return r;
+/* end mdb change*/
+
     if (r = SDIF_Read4(&(fh->size),1,f)) return r;
     if (r = SDIF_Read8(&(fh->time),1,f)) return r;
     if (r = SDIF_Read4(&(fh->streamID),1,f)) return r;
@@ -376,7 +381,6 @@ SDIFresult SDIF_SkipMatrix(const SDIF_MatrixHeader *head, FILE *f) {
     return SkipBytes(f, size);
 }
 
-
 SDIFresult
 SDIF_ReadMatrixData(void *putItHere, FILE *f, const SDIF_MatrixHeader *head) {
     size_t datumSize = (size_t) SDIF_GetMatrixDataTypeSize(head->matrixDataType);
@@ -442,7 +446,7 @@ SDIFresult SDIF_Write1(const void *block, size_t n, FILE *f) {
 SDIFresult SDIF_Write2(const void *block, size_t n, FILE *f) {
 #ifdef LITTLE_ENDIAN
     SDIFresult r;
-    char *q = block;
+    const char *q = block; /*mdb added const, to avoid compiler warning.*/
     int	i, m = 2*n;
 
     if ((n << 1) > BUFSIZE) {
@@ -469,7 +473,7 @@ SDIFresult SDIF_Write2(const void *block, size_t n, FILE *f) {
 SDIFresult SDIF_Write4(const void *block, size_t n, FILE *f) {
 #ifdef LITTLE_ENDIAN
     SDIFresult r;
-    char *q = block;
+    const char *q = block; /*mdb added const to avoid compiler warning.*/ 
     int i, m = 4*n;
 
     if ((n << 2) > BUFSIZE) {
@@ -496,7 +500,7 @@ SDIFresult SDIF_Write4(const void *block, size_t n, FILE *f) {
 SDIFresult SDIF_Write8(const void *block, size_t n, FILE *f) {
 #ifdef LITTLE_ENDIAN
     SDIFresult r;
-    char *q = block;
+    const char *q = block; /*mdb added const to avoid compiler warning.*/ 
     int i, m = 8*n;
 
     if ((n << 3) > BUFSIZE) {
