@@ -19,6 +19,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "sdif.h"
 #include "string.h"
 
@@ -28,8 +29,9 @@ typedef int Boolean;
 
 
 void SpewSDIF(char *filename);
+char *MDTstring(sdif_int32 t);
 
-int main(int argc, char *argv[]) {
+void main(int argc, char *argv[]) {
   int i;
 
   /* Parse args */
@@ -41,7 +43,7 @@ int main(int argc, char *argv[]) {
 /* A trivial data structure for keeping track of ID numbers in an SDIF file */
 
 #define MAX_IDS_TO_REMEMBER 1000
-static int32 idsSeen[MAX_IDS_TO_REMEMBER];
+static sdif_int32 idsSeen[MAX_IDS_TO_REMEMBER];
 static int numIdsSeen;
 static Boolean sawTooMany = FALSE;
 
@@ -50,7 +52,7 @@ void ForgetIDs(void) {
   sawTooMany = FALSE;
 }
 
-Boolean IsNewId(int32 id) {
+Boolean IsNewId(sdif_int32 id) {
   int i;
   for (i = 0; i < numIdsSeen; i++) {
     if (idsSeen[i] == id) return FALSE;
@@ -80,20 +82,20 @@ void PrintAllIDs(void) {
 }
 
 void SpewSDIF(char *filename) {
-  int size, frameCount;
-  struct SDIFFrameHeader fh;
-  MatrixHeader	mh;
-  FILE *f = OpenSDIFRead(filename);
+  int frameCount;
+  SDIF_FrameHeader fh;
+  SDIF_MatrixHeader	mh;
+  FILE *f = SDIF_OpenRead(filename);
 
   if (f == NULL) {
-    printf("Couldn't open %s\n", filename);
+    printf("Couldn't open %s: %s\n", filename, SDIF_GetLastErrorString());
     return;
   }
 
 
   ForgetIDs();
   frameCount = 0;
-  while (ReadSDIFFrameHeader(&fh, f) == 1) {
+  while (SDIF_ReadFrameHeader(&fh, f) == 1) {
     int i;
 
     frameCount++;
@@ -120,39 +122,121 @@ void SpewSDIF(char *filename) {
 
     for (i = 0; i < fh.matrixCount; ++i) {
       int j,k;
-      float32 val32;
-      float64 val64;
 
-      ReadMatrixHeader(&mh,f);
-      printf ("   Matrix %d: Type %c%c%c%c, DataType %ld, %ld Rows, %ld Columns\n",
-	      i,mh.matrixType[0],mh.matrixType[1],mh.matrixType[2],mh.matrixType[3],
-	      mh.matrixDataType,mh.rowCount,mh.columnCount);
+      SDIF_ReadMatrixHeader(&mh,f);
+      printf ("   Matrix %d: Type %c%c%c%c, %s, %ld Row%s, %ld Column%s\n",i,
+	      mh.matrixType[0],mh.matrixType[1],mh.matrixType[2],mh.matrixType[3],
+	      MDTstring(mh.matrixDataType),
+	      mh.rowCount, mh.rowCount==1? "" : "s", 
+	      mh.columnCount, mh.columnCount==1? "" : "s");
+
+
 
       switch (mh.matrixDataType) {
       case SDIF_FLOAT32 :
 	for (j = 0; j < mh.rowCount; ++j) {
 	  for (k = 0; k < mh.columnCount; ++k) {
-	    read4(&val32,1,f);
+	    sdif_float32 val32;
+	    SDIF_Read4(&val32,1,f);
 	    printf ("\t%f",val32);
 	  }
 	  puts ("");
 	}
 	if ((mh.rowCount * mh.columnCount) & 0x1) {
-	    float pad;
-	    read4(&pad,1,f);
+	    sdif_float32 pad;
+	    SDIF_Read4(&pad,1,f);
 	}
 	break;
+
       case SDIF_FLOAT64 :
 	for (j = 0; j < mh.rowCount; ++j) {
 	  for (k = 0; k < mh.columnCount; ++k) {
-	    read8(&val64,1,f);
+	    sdif_float64 val64;
+	    SDIF_Read8(&val64,1,f);
 	    printf ("\t%f",val64);
 	  }
 	  puts ("");
 	}
 	break;
+
+      case SDIF_INT32 :
+	for (j = 0; j < mh.rowCount; ++j) {
+	  for (k = 0; k < mh.columnCount; ++k) {
+	    sdif_int32 val32;
+	    SDIF_Read4(&val32,1,f);
+	    printf ("\t%d",val32);
+	  }
+	  puts ("");
+	}
+	if ((mh.rowCount * mh.columnCount) & 0x1) {
+	    sdif_int32 pad;
+	    SDIF_Read4(&pad,1,f);
+	}
+	break;
+
+      case SDIF_UINT32 :
+	for (j = 0; j < mh.rowCount; ++j) {
+	  for (k = 0; k < mh.columnCount; ++k) {
+	    sdif_uint32 val32;
+	    SDIF_Read4(&val32,1,f);
+	    printf ("\t%u",val32);
+	  }
+	  puts ("");
+	}
+	if ((mh.rowCount * mh.columnCount) & 0x1) {
+	    sdif_int32 pad;
+	    SDIF_Read4(&pad,1,f);
+	}
+	break;
+
+      case SDIF_UTF8: {
+	    /* Read the whole thing into memory */
+	    int numBytes = SDIF_GetMatrixDataSize(&mh); /* includes padding */
+	    char *data = malloc(numBytes);
+	    SDIF_Read1(data, numBytes, f);
+
+	    /* Column-by-column, see if it's really UTF8 or just ASCII */
+
+#define IsASCII(c) (!((c) & 128))
+	    for (k = 0; k < mh.columnCount; ++k) { 
+		int seenNonASCII = 0;
+		for (j = 0; j < mh.rowCount; ++j) {  
+		    if (!IsASCII(data[j*mh.columnCount + k])) {
+			seenNonASCII = 1;
+			break;
+		    }
+		}
+		if (seenNonASCII) {
+		    printf("\t[Column %d has non-ASCII characters.  "
+			   "Sorry; no UTF8 support yet.]\n", k);
+		} else {
+		    printf("[%d] \"", k);
+		    for (j = 0; j < mh.rowCount; ++j) {
+			printf("%c", data[j*mh.columnCount + k]);
+		    }
+		    printf("\"\n");
+		}
+	    }
+	    free(data);
+      }	break;
+
+      case SDIF_BYTE:
+	for (j = 0; j < mh.rowCount; ++j) {
+          for (k = 0; k < mh.columnCount; ++k) {
+	    unsigned char val8;
+	    SDIF_Read1(&val8, 1, f);
+            printf(" %x (%c)\t", val8, val8);
+	  }
+	  putchar('\n');
+	}
+	if ((mh.rowCount * mh.columnCount) & 0x7) {
+	    unsigned char pad[7];
+	    SDIF_Read1(&pad, 8-((mh.rowCount * mh.columnCount) & 0x7), f);
+	}
+	break;
+
       default:
-	fprintf (stderr, "*** Unrecognized data type %d\n",mh.matrixDataType);
+	fprintf (stderr, "*** Unrecognized data type %x\n",mh.matrixDataType);
 	goto close;
       }
     }
@@ -167,5 +251,20 @@ void SpewSDIF(char *filename) {
   PrintAllIDs();
 
 close:
-  CloseSDIFRead(f);
+  SDIF_CloseRead(f);
+}
+
+
+char unrecognized[50];
+
+char *MDTstring(sdif_int32 t) {
+    if (t == SDIF_FLOAT32) return "SDIF_FLOAT32";
+    if (t == SDIF_FLOAT64) return "SDIF_FLOAT64";
+    if (t == SDIF_INT32) return "SDIF_INT32";
+    if (t == SDIF_UINT32) return "SDIF_UINT32";
+    if (t == SDIF_UTF8) return "SDIF_UTF8";
+    if (t == SDIF_BYTE) return "SDIF_BYTE";
+    if (t == SDIF_NO_TYPE) return "SDIF_NO_TYPE";
+    sprintf(unrecognized, "Unrecognized MatrixDataType %x", t);
+    return unrecognized;
 }
