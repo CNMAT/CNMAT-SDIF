@@ -51,11 +51,6 @@ University of California, Berkeley.
 #include "sdif.h"
 #include "string.h"
 
-typedef int Boolean;
-#define FALSE 0
-#define TRUE 1
-
-
 void SpewSDIF(char *filename);
 char *MDTstring(sdif_int32 t);
 

@@ -143,7 +143,7 @@ void CopySDIF(char *inFileName, char *outFileName) {
     }
 }
 
-void main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 
     if (argc != 3) {
 	fprintf(stderr, "Usage: %s input.sdif output.sdif\n", argv[0]);
@@ -151,4 +151,5 @@ void main(int argc, char *argv[]) {
     }
 
     CopySDIF(argv[1], argv[2]);
+    return 0;
 }

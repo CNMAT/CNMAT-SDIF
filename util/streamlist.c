@@ -40,12 +40,13 @@ University of California, Berkeley.
 static void try_file(char *filename);
 static void do_streamlist(FILE *f, char *name, int showframes);
 
-void main(int argc, char **argv) {
+int main(int argc, char **argv) {
     int i;
 
     for (i = 1; i < argc; ++i) {
 	try_file(argv[i]);
     }
+    return 0;
 }
 
 static void try_file(char *filename)  {
