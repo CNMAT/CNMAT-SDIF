@@ -27,13 +27,13 @@
 
 
 int main (int argc, char *argv[]) {
-  int	i,j,firstfile;
+  int	i,firstfile;
   int   numbins,srate;
   FILE	*infile,*outfile;
   float	real,cplx,framesize,resolution,framestep;
   char	*extension, outfname[1024];
-  struct SDIFFrameHeader head;
-  MatrixHeader matrixHeader,stiHeader;
+  SDIF_FrameHeader head;
+  SDIF_MatrixHeader SDIF_MatrixHeader,stiHeader;
 
 
   srate = 44100;
@@ -83,14 +83,14 @@ int main (int argc, char *argv[]) {
     extension = strrchr(outfname,'.');
     strcpy(extension,".i.sdif");
     
-    if ((outfile = OpenSDIFWrite(outfname)) == NULL) {
+    if ((outfile = SDIF_OpenWrite(outfname)) == NULL) {
       fprintf (stderr, "Error creating %s\n",outfname);
       fclose(infile);
       return -1;
     }
     
-    Copy4Bytes(head.frameType,"1STF");
-    head.streamID = GenUniqueSDIFFrameID();
+    SDIF_Copy4Bytes(head.frameType,"1STF");
+    head.streamID = SDIF_UniqueStreamID();
     head.matrixCount = 2;
     head.size = 16 + 16 + 8 + 16 + 8 * numbins;
     head.time = framesize * 0.5;
@@ -98,22 +98,22 @@ int main (int argc, char *argv[]) {
     stiHeader.rowCount = 1;
     stiHeader.columnCount = 2;
     stiHeader.matrixDataType = SDIF_FLOAT32;
-    Copy4Bytes(stiHeader.matrixType,"1STI");
+    SDIF_Copy4Bytes(stiHeader.matrixType,"1STI");
 
-    matrixHeader.rowCount = numbins;
-    matrixHeader.columnCount = 2;
-    matrixHeader.matrixDataType = SDIF_FLOAT32;
-    Copy4Bytes(matrixHeader.matrixType,"1STF");
+    SDIF_MatrixHeader.rowCount = numbins;
+    SDIF_MatrixHeader.columnCount = 2;
+    SDIF_MatrixHeader.matrixDataType = SDIF_FLOAT32;
+    SDIF_Copy4Bytes(SDIF_MatrixHeader.matrixType,"1STF");
 
     while( !feof(infile)) {
 	int i;
 	
-	WriteSDIFFrameHeader(&head,outfile);
-	WriteMatrixHeader(&stiHeader,outfile);
+	SDIF_WriteFrameHeader(&head,outfile);
+	SDIF_WriteMatrixHeader(&stiHeader,outfile);
 	fwrite(&resolution,sizeof(float),1,outfile);
 	fwrite(&framesize,sizeof(float),1,outfile);
 
-	WriteMatrixHeader(&matrixHeader,outfile);
+	SDIF_WriteMatrixHeader(&SDIF_MatrixHeader,outfile);
 	
 	for (i = 0; i < numbins; ++i) {
 	    fread (&real,sizeof(float),1,infile);

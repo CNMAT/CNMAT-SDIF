@@ -16,6 +16,10 @@
  Modified 1/13/98 by Amar Chaudhary for new SDIF format
 */
 
+
+xxx must wrap phase
+
+
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
