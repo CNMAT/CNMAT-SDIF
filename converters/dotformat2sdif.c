@@ -43,10 +43,6 @@ University of California, Berkeley.
 #include "sdif-types.h"
 #include "readformat.h"
 
-typedef int Boolean;
-#define FALSE 0
-#define TRUE 1
-
 #define streq(s1, s2) (strcmp((s1), (s2)) == 0)
 
 static char *usage = 

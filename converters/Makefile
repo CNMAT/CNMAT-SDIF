@@ -1,6 +1,6 @@
 CFLAGS = -I../lib -I../../lib/soundfiles/
 
-ALL = dotformat2sdif f0tosdif F0tosdif pics2sdif res2sdif text2sdif \
+ALL = dotformat2sdif f0tosdif capital-F0tosdif pics2sdif res2sdif text2sdif \
 	  sdif2dotformat
 # i2sdif sdif2sf sf2sdif
 
@@ -12,8 +12,8 @@ dotformat2sdif: sdif.o dotformat2sdif.o readformat.o sdif-types.o
 f0tosdif: sdif.o f0tosdif.o
 	cc $(CFLAGS) -o f0tosdif sdif.o f0tosdif.o
 
-F0tosdif: sdif.o F0tosdif.o
-	cc $(CFLAGS) -o F0tosdif sdif.o F0tosdif.o
+capital-F0tosdif: sdif.o capital-F0tosdif.o
+	cc $(CFLAGS) -o capital-F0tosdif sdif.o capital-F0tosdif.o
 
 pics2sdif: sdif.o pics2sdif.o
 	cc $(CFLAGS) -o pics2sdif sdif.o pics2sdif.o
@@ -52,8 +52,8 @@ sdif-types.o: ../lib/sdif-types.c ../lib/sdif-types.h
 f0tosdif.o: f0tosdif.c ../lib/sdif.h
 	cc $(CFLAGS) -c f0tosdif.c
 
-F0tosdif.o: F0tosdif.c ../lib/sdif.h
-	cc $(CFLAGS) -c F0tosdif.c
+capital-F0tosdif.o: capital-F0tosdif.c ../lib/sdif.h
+	cc $(CFLAGS) -c capital-F0tosdif.c
 
 dotformat2sdif.o: dotformat2sdif.c ../lib/sdif.h readformat.h
 	cc $(CFLAGS) -c dotformat2sdif.c

@@ -39,11 +39,6 @@ University of California, Berkeley.
 #include "sdif.h"
 #include "string.h"
 
-typedef int Boolean;
-#define FALSE 0
-#define TRUE 1
-
-
 void SDIF2DF(char *filename, sdif_int32 streamID);
 
 int main(int argc, char *argv[]) {
