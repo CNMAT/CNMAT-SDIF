@@ -37,7 +37,8 @@ commercial licensing opportunities.
   
   NOTES
   
-  - currently supports sdif_float32 and sdif_float64 matrix data only
+  - currently supports sdif_float32 and sdif_float64 matrix data only,
+  plus limited sdif_int32
 
 */
 
@@ -46,6 +47,7 @@ commercial licensing opportunities.
 
 
 #include <stdio.h>
+#include <string.h>
 #include <stdarg.h>
 #include <math.h>
 
@@ -107,13 +109,10 @@ SDIFresult SDIFutil_CloneMatrix(SDIFmem_Matrix m, SDIFmem_Matrix *mnew)
 
 SDIFresult SDIFutil_CopyMatrix(SDIFmem_Matrix dstMatrix, SDIFmem_Matrix srcMatrix)
 {
-  int i, j;
-  
-  for(i = 0; i < srcMatrix->header.rowCount; i++)
-    for(j = 0; j < srcMatrix->header.columnCount; j++)
-      SDIFutil_SetMatrixCell(dstMatrix, j, i, SDIFutil_GetMatrixCell(srcMatrix, j, i));
-  
-  return ESDIF_SUCCESS;
+	int numBytes = SDIF_GetMatrixDataSize(&(srcMatrix->header));
+		
+	memcpy(dstMatrix->data, srcMatrix->data, numBytes);
+	return ESDIF_SUCCESS;
 }
 
 
@@ -167,16 +166,20 @@ void SDIFutil_LoadMatrixFloat64(SDIFmem_Matrix m, sdif_float64 *list)
 }
 
 
+void *SDIFutil_GetMatrixElement(SDIFmem_Matrix m, sdif_int32 column, sdif_int32 row) {
+	return (char *)m->data + 
+            (((row * m->header.columnCount) + column) *
+             SDIF_GetMatrixDataTypeSize(m->header.matrixDataType));
+}
+
 sdif_float64 SDIFutil_GetMatrixCell(SDIFmem_Matrix m,
                                     sdif_int32 column,
                                     sdif_int32 row
                                     )
 {
-  sdif_float64 v;
+  sdif_float64 v = -999999.999;
   
-  void *p = (char *)m->data + 
-            (((row * m->header.columnCount) + column) * 
-             SDIF_GetMatrixDataTypeSize(m->header.matrixDataType));
+  void *p = SDIFutil_GetMatrixElement(m, column, row);
   
   switch(m->header.matrixDataType)
   {
@@ -192,15 +195,26 @@ sdif_float64 SDIFutil_GetMatrixCell(SDIFmem_Matrix m,
 }
 
 
+sdif_int32 SDIFutil_GetMatrixCell_int32(SDIFmem_Matrix m,
+                                   	 	sdif_int32 column,
+                                   		sdif_int32 row
+                                   		)
+{  
+  if (m->header.matrixDataType == SDIF_INT32) {
+  	return *((sdif_int32 *) SDIFutil_GetMatrixElement(m, column, row));
+  } else {
+  	return -999999;
+  }
+}
+
+
 void SDIFutil_SetMatrixCell(SDIFmem_Matrix m, 
                             sdif_int32 column, 
                             sdif_int32 row, 
                             sdif_float64 value
                             )
 {
-  void *p = (char *)m->data + 
-            (((row * m->header.columnCount) + column) * 
-             SDIF_GetMatrixDataTypeSize(m->header.matrixDataType));
+  void *p = SDIFutil_GetMatrixElement(m, column, row);
   
   switch(m->header.matrixDataType)
   {
@@ -209,6 +223,10 @@ void SDIFutil_SetMatrixCell(SDIFmem_Matrix m,
       break;
     case SDIF_FLOAT64:
       *(sdif_float64 *)p = value;
+      break;
+      
+    default:
+      /* No way to complain properly */
       break;
   }
 }

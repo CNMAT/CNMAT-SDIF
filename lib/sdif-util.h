@@ -77,15 +77,27 @@ void SDIFutil_LoadMatrixFloat32(SDIFmem_Matrix m, sdif_float32 *list);
 
 void SDIFutil_LoadMatrixFloat64(SDIFmem_Matrix m, sdif_float64 *list);
 
+void *SDIFutil_GetMatrixElement(SDIFmem_Matrix m, sdif_int32 column, sdif_int32 row);
 
+
+/* GetMatrixCell procedures return cheesy -99999 value instead of trying their best
+   on type conversion.  */
 sdif_float64 SDIFutil_GetMatrixCell(SDIFmem_Matrix m,
                                     sdif_int32 column,
                                     sdif_int32 row
                                     );
+
+sdif_int32 SDIFutil_GetMatrixCell_int32(SDIFmem_Matrix m,
+                                   	 	sdif_int32 column,
+                                   		sdif_int32 row
+                                   		);
+
+
 
 void SDIFutil_SetMatrixCell(SDIFmem_Matrix m, 
                             sdif_int32 column, 
                             sdif_int32 row, 
                             sdif_float64 value
                             );
+
 
