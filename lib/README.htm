@@ -1,479 +1,1 @@
-<html>
-<head>
-<style type="text/css">
-<!--
-.style1 {font-style: italic}
--->
-</style>
-</head>
-<body>
-<h1>Handoff Notes for SDIF Library/Tools (3/04-4/04)</h1>
-<p>Ben &quot;Jacobs&quot;<br>
-&lt;tel: 415.381.5397&gt; <br>
-&lt;email: bjacobs at deselect dot net&gt;</p>
-<p>revision date: 2004.06.23</p>
-<hr>
-<h2>Contents</h2>
-<ul>
-	<li><a href="#overview">Overview</a>
-	  <ul>
-	    <li>General SDIF work</li>
-        <li>Stereo Incandescence project specific work  </li>
-	  </ul>
-	</li>
-	<li><a href="#manifest">Manifest</a>
-	  <ul>
-	    <li>Notes</li>
-        <li>SDIF-generic</li>
-	    <li>SDIF-max</li>
-	  </ul>
-	</li>
-	<li><a href="#minor">Minor Issues</a></li>
-	<li><a href="#todo">To Do List</a></li>
-</ul>  
-
-<hr>
-<a name="overview"></a>
-<h2>Overview</h2>
-<h3>General SDIF  work </h3>
-<ul>
-	<li>SDIF-generic lib
-		<ul>
-			<li>concepts
-				<ul>
-				<li>representation of missing data as NaN</li>
-				<ul>
-					<li>how to form
-					  <ul>
-						<li>example from SDIF-importSEP.c 
-							<pre>
-#include &lt;math.h&gt;
-
-if(row->row[0].intensity == -1)
-	row->row[0].intensity = NAN;</pre>
-						</li>
-					  </ul>
-					</li>
-					<li>how to detect 
-					  <ul>
-						<li>example from sdif-buf.c  
-							<pre>
-#include &lt;math.h&gt;
-
-//  finish if found cell with a real value (not a NaN)
-if(isfinite(*valueFound))
-    return ESDIF_SUCCESS;</pre>
-						</li>
-					  </ul>
-					</li>
-				</ul>
-				<li>very minimal modification to existing SDIF modules (modified by extension only)</li>
-				</ul>
-			</li>
-			<li>sdif-buffer module (new)
-			  <ul>
-			    <li>implementation of SDIFbuf_Buffer object, providing most common operations on a full set of SDIF data in memory (abstraction of code previously found in SDIF-buffer max external)
-			      <ul>
-			        <li><em>includes simple NaN support (e.g when searching for data forwards or backwards from a specified location)</em></li>
-			        <li><em>future: clean support for &quot;on demand&quot; data retrieval can be implemented here (see comments in source) </em></li>
-		          </ul>
-			    </li>
-	          </ul>
-			</li>
-			<li>sdif-interp module (new) 
-			  <ul>
-			    <li>implementation of SDIFinterp_Interpolator object, providing support for interpolating SDIF data in an SDIFbuf_Buffer instance
-			      <ul>
-			        <li><em>actual interpolation algorithms are modular (interpolator functions are declared to have type SDIFinterp_InterpolatorFn)</em></li>
-		          </ul>
-			    </li>
-	          </ul>
-			</li>
-			<li>sdif-util module (new)
-			  <ul>
-			    <li>Implementation of common generic SDIF operations:			      
-                  <ul>
-			        <li>SDIFutil_CreateMatrix()</li>
-					<li>SDIFutil_CloneMatrix()</li>
-					<li>SDIFutil_CopyMatrix()</li>
-					<li>SDIFutil_MatrixEqual()</li>
-					<li>SDIFutil_LoadMatrixFloat32()</li>
-					<li>SDIFutil_LoadMatrixFloat64()</li>
-					<li>SDIFutil_GetMatrixCell()</li>
-					<li>SDIFutil_SetMatrixCell()</li>
-	              </ul>
-			    </li>
-		        <li><em>note: currently supports sdif_float32 and sdif_float64 matrix data only; mostly assumes all data is 64 bits (need to think about the cleanest and most efficient way to support  truly generic matrix operations)</em></li>
-			    <li><em>perhaps these functions should just be added to the SDIFmem module?</em></li>
-			  </ul>
-			</li>
-	    </ul>
-	</li>
-    <li>SDIF-max externals
-		<ul>
-			<li>SDIF-buffer
-			  <ul>
-			    <li><em>same interface as before, but refactored to use generic library code (sdif-buffer module) instead </em></li>
-		        <li><em>added &quot;timeshift&quot; method (shift all frame times so earliest frame time == 0) </em></li>
-			  </ul>
-			</li>
-			<li>SDIF-info</li>
-			<li>SDIF-listpoke</li>
-			<li>SDIF-tuples
-			  <ul>
-			    <li><em>interpolation support added</em>
-			      <ul>
-			        <li class="style1">added &quot;direction&quot; message </li>
-		            <li><em>optional &quot;interp N&quot; argument to &quot;tuples&quot; message, where N specifies interpolator to be used: </em>
-				      <pre>
-typedef enum {
-  INTERP_MODE_NONE,
-  INTERP_MODE_LINEAR,
-  INTERP_MODE_LAGRANGE2,
-  INTERP_MODE_LAGRANGE3,
-  INTERP_MODE_END
-} InterpMode;</pre>
-				    </li>
-			      </ul>
-			    </li>
-	          </ul>
-			</li>
-	    </ul>
-	</li>
-</ul>
-<h3>Stereo Incandescence project specific work </h3>
-<ul>
-	<li>Max externals
-        <ul>
-			<li>SDIF-importSEP
-              <ul>
-                <li>read Solar Energetic Particle data from files into a named SDIF-buffer
-                  <ul>
-                    <li><em>SEP format is generic fixed-column ASCII, but some columns have special meanings/dependencies, so this tool won't be much use for anything else </em></li>
-				  </ul>
-                </li>
-			    <li>measurements which were  recorded as &quot;-1&quot; are stored in SDIF matrix as NaN (measurement not available) </li>
-              </ul>
-	      </li>
-	    </ul>
-  </li>
-</ul>  
-
-<hr>
-<a name="manifest"></a>
-<h2>Manifest</h2>
-<h3>Notes</h3>
-	<ul>
-      <li>README.htm (this file)</li>
-    </ul>
-<h3>SDIF-generic</h3>
-<ul>
-	<li>
-      new source
-		<ul>
-			<li>SDIFbuf_Buffer class
-              <ul>
-                <li>sdif-buf.h
-                    <ul>
-                      <li><em>public interface to sdif-buf module; API is documented here</em> </li>
-                    </ul>
-                </li>
-                <li>sdif-buf-private.h</li>
-                <li>sdif-buf.c</li>
-              </ul>
-			</li>
-			<li>SDIFinterp_Interpolator class
-              <ul>
-                <li>sdif-interp.h
-                    <ul>
-                      <li><em>public interface to sdif-interp module; API is documented here</em> </li>
-                    </ul>
-                </li>
-                <li>sdif-interp-implem.c
-                  <ul>
-                    <li><span class="style1">implementation of common interpolator functions (so far: Linear, Lagrange-Waring)</span></li>
-                  </ul>
-                </li>
-                <li>sdif-interp-implem.h</li>
-                <li>sdif-interp-private.h</li>
-                <li>sdif-interp.c</li>
-              </ul>
-			</li>
-			<li>SDIF utils
-			  <ul>
-			    <li>sdif-util.h
-                    <ul>
-                      <li><em>public interface to sdif-util module; API is documented here</em></li>
-                    </ul>
-		        </li>
-		        <li>sdif-util.c</li>
-			  </ul>
-			</li>
-	    </ul>
-	</li>
-	<li>
-      modified source
-	  	<ul>
-	        <li>existing SDIF modules
-              <ul>
-                <li>sdif.c
-                    <ul>
-                      <li><em>appended new result messages to error_string_array[]</em></li>
-                      <li><em>added safety check for invalid result code in SDIF_GetErrorString()</em></li>
-                    </ul>
-                </li>
-                <li>sdif.h
-	              <ul>
-	                <li><em>added new result codes to enum SDIFresult</em></li>
-	                <li><em>added end marker ESDIF_END_OF_SDIF_VALUES to enum SDIFresult </em></li>
-                  </ul>
-                </li>
-                <li>sdif-mem.c
-	              <ul>
-	                <li><em>added static unsigned char SDIFmem_InitializedFlag</em></li>
-	                <li><em>added SDIFmem_Initialized() to allow client modules to make sure SDIFmem has been properly initialized </em></li>
-	                <li><em>exposed user-specified alloc/free functions to clients, through SDIFmem_Alloc() and SDIFmem_Free()</em></li>
-                  </ul>
-                </li>
-                <li>sdif-mem.h
-	              <ul>
-	                <li><em>additions to </em><em>API documented in comments </em></li>
-                  </ul>
-                </li>
-              </ul>
-	        </li>
-        </ul>
-	</li>
-	<li>
-      unmodified source
-		<ul>
-		  <li>existing SDIF modules
-		    <ul>
-		      <li>sdif-types.c</li>
-		      <li>sdif-types.h</li>
-		      <li>sdifu.c</li>
-		      <li>sdifu.h</li>
-		      <li>sdif-sinusoids.c</li>
-		      <li>sdif-sinusoids.h</li>
-	        </ul>
-		  </li>
-		  <li>other stuff
-		    <ul>
-		      <li>test-sdif-mem.c
-                  <ul>
-                    <li><em>should test code be part of the core distribution? </em></li>
-                  </ul>
-	          </li>
-		      <li>Makefile (only used for test-sdif-mem.c)
-		        <ul>
-		          <li><em>ditto</em></li>
-	            </ul>
-		      </li>
-	        </ul>
-		  </li>
-	    </ul>
-	</li>
-	<li>
-      unit tests (new)
-	  <ul>
-	  	<li><em>provided &quot;as is&quot;: suite of tests for verifying correctness of added SDIF library code by various means (mostly hammering on an SDIFbuf_buffer instance with lots of random data and then verifying that results of various operations are what we expected) </em></li>
-		<li>
-        source
-			<ul>
-			  <li>sdif-unit.c
-			    <ul>
-			      <li><em>test framework (main is here) </em></li>
-		        </ul>
-			  </li>
-			  <li>sdif-unit.h</li>
-			  <li>sdif-unit-utils.c
-			    <ul>
-			      <li><em>common support code used by various tests </em></li>
-		        </ul>
-			  </li>
-			  <li>sdif-unit-utils.h</li>
-			  <li>sdif-unit-test*.c
-			    <ul>
-			      <li><em>these are the individual tests (one test per file) </em></li>
-		        </ul>
-			  </li>
-		    </ul>
-		</li>
-		<li>
-        cw project
-			<ul>
-			  <li>unit_tests.mcp (builds standalone application) </li>
-			</ul>
-		</li>
-	  </ul>
-	</li>
-</ul>
-<h3>SDIF-max</h3>
-<ul>
-	<li>
-	  max externals (one cw project per object)
-		<ul>
-			<li>SDIF-buffer (modified)
-			  <ul>
-			    <li>SDIF-buffer.c</li>
-		        <li>SDIF-buffer.h</li>
-			  </ul>
-			</li>
-			<li>SDIF-info (modified)
-			  <ul>
-			    <li>SDIF-info.c</li>
-	          </ul>
-			</li>
-			<li>SDIF-listpoke (modified)
-			  <ul>
-			    <li>SDIF-listpoke.c</li>
-		      </ul>
-			</li>
-			<li>SDIF-tuples (modified)
-			  <ul>
-			    <li>SDIF-tuples.c</li>
-		      </ul>
-			</li>
-			<li>SDIF-importSEP (new)
-			  <ul>
-			    <li>SDIF-importSEP.c</li>
-		        <li>README.txt 
-		          <ul>
-		            <li><em>documentation of SEP data file format</em></li>
-	              </ul>
-		        </li>
-		      </ul>
-			</li>
-	    </ul>
-	</li>
-	<li>
-      max test patches / demos
-	  	<ul>
-			<li>how_to_use_interp
-			  <ul>
-			    <li><em>simple example, showing how to use SDIF-importSEP and SDIF-tuples objects (including interpolation) </em></li>
-		      </ul>
-			</li>
-			<li>sep_interp_demo
-			  <ul>
-			    <li><em>slightly better example with graphics, demonstrating interpolation of SEP data (displayed on multislider graphs) </em></li>
-		      </ul>
-			</li>
-			<li>unit_test*
-			  <ul>
-			    <li><em>quasi &quot;unit test&quot; patches used to verify that new builds of SDIF-buffer object and friends exhibit identical behavior to previous version (not very fancy, just a lot of console output which can be checked for diffs) </em></li>
-		      </ul>
-			</li>
-	    </ul>
-	</li>
-	<li>
-      data files
-	  	<ul>
-        	<li>sep1_*
-        	  <ul class="style1">
-        	    <li>sample SEP data, needed for running max demo patches (lots more SEP data available at &lt;ftp://cse.ssl.berkeley.edu/sounds/data/&gt;, at least until Laura takes it down...) </li>
-      	    </ul>
-        	</li>
-	    </ul>
-	</li>
-</ul>
-
-<hr>
-<a name="minor"></a>
-<h2>Minor Issues</h2>
-<ul>
-  <li>need to do something better about defining booleans
- (or give up and just call them int)
-    <ul>
-      <li><em>right now this same block is needed in a few different header files, and may also be needed in client headers (bad style, and also triggers compiler warnings about the repeated typedef):</em>
-        <pre>
- #ifndef SDIF_BOOLEAN
- typedef unsigned char Boolean;
- #undef TRUE
- #define TRUE 1
- #undef FALSE
- #define FALSE 0
- #define SDIF_BOOLEAN
- #endif</pre>
-      </li>
-    </ul>
-  </li>
-  <li>SDIF-buffer.c
-	<ul>
-	  <li>plumbing for ListDelete() already existed but hasn't been implemented </li>
-	  <li>minor kludginess (look for #ifdef KLUDGE) </li>
-		<ul>
-		  <li>ReadStream()
-			<ul>
-			  <li>this is bad place for logic to check for valid stream mode
-				<ul>
-				  <li><em>works ok, but would be cleaner if SDIFmem_BeginReadStream() did this check </em></li>
-				</ul>
-			  </li>
-			  <li>buffer state doesn't get updated if file contained no frames
-				<ul>
-				  <li><em>but this is the way SDIF-buffer always behaved, so maybe better leave it alone...</em></li>
-				</ul>
-			  </li>
-			</ul>
-		  </li>
-		</ul>
-	</ul>
-  </li>
-  <li>initialization sequence
-    <ul>
-      <li>proper initialization is voluntary</li>
-        <ul>
-          <li>in all cases, SDIFmem_Init() should be called first, to set up user's malloc()/free() callbacks for use by other SDIF modules </li>
-        </ul>
-      <li>improper initialization is not detected, but it could (should?) be done by calling SDIFmem_Initialized() from other SDIF*_Init() functions which depend on sdif-mem.c
-      </li>
-    </ul>
-  </li>
-  <li>many of the new  library functions   require matrix cell position or matrix dimension arguments; these are expected to be provided in (column, row) order... is that strange? </li>
-  <li>new code uses C99-style "//" comments, ok?</li>
-</ul>
-
-<hr>
-<a name="todo"></a>
-<h2> To Do List</h2>
-<ul>
-    <li>sdif-max documentation needed (ask Matt to do this?)
-      <ul>
-        <li>SDIF-buffer.help
-          <ul>
-            <li>&quot;timeshift&quot; message (new)</li>
-            <li>&quot;write&quot; message (undocumented)</li>
-            <li>&quot;change-stream-ID&quot; message (undocumented)</li>
-            <li>&quot;change-frametype&quot; message (undocumented)</li>
-            <li>&quot;debug&quot; message (undocumented)   </li>
-          </ul>
-        </li>
-        <li>SDIF-tuples.help
-          <ul>
-            <li>&quot;direction&quot; message (new) </li>
-            <li>&quot;interp&quot; argument + interpolation selector param to &quot;tuples&quot; message (changed)</li>
-            <li>&quot;version&quot; message (undocumented)</li>
-            <li>&quot;reltime&quot; message (undocumented)</li>
-            <li>&quot;max_rows&quot; message (undocumented) </li>
-          </ul>
-        </li>
-        <li>SDIF-listpoke.help
-          <ul>
-            <li>&quot;newmatrix&quot; message (undocumented)</li>
-            <li>&quot;matrixtype&quot; message (undocumented)</li>
-            <li>&quot;numcolumns&quot; message (undocumented)</li>
-            <li>remove extra stuff (mistakenly copied from SDIF-buffer.help?) 
-              <ul>
-                <li> everything about &quot;tuples&quot; message</li>
-                <li>everything about messages which change &quot;tuples&quot; behavior </li>
-              </ul>
-            </li>
-          </ul>
-        </li>
-      </ul>
-    </li>
-</ul>
-
-</body>
-</html>
+<html><head><style type="text/css"><!--.style1 {font-style: italic}--></style></head><body><h1>Handoff Notes for SDIF Library/Tools (3/04-4/04)</h1><p>Ben &quot;Jacobs&quot;<br>&lt;tel: 415.381.5397&gt; <br>&lt;email: bjacobs at deselect dot net&gt;</p><p>revision date: 2004.12.16 (matt) </p><hr><h2>Contents</h2><ul>	<li><a href="#overview">Overview</a>	  <ul>	    <li>General SDIF work</li>        <li>Stereo Incandescence project specific work  </li>	  </ul>	</li>	<li><a href="#manifest">Manifest</a>	  <ul>	    <li>Notes</li>        <li>SDIF-generic</li>	    <li>SDIF-max</li>	  </ul>	</li>	<li><a href="#minor">Minor Issues</a></li>	<li><a href="#todo">To Do List</a></li></ul>  <hr><a name="overview"></a><h2>Overview</h2><h3>General SDIF  work </h3><ul>	<li>SDIF-generic lib		<ul>			<li>concepts				<ul>				<li>representation of missing data as NaN</li>				<ul>					<li>how to form					  <ul>						<li>example from SDIF-importSEP.c 							<pre>#include &lt;math.h&gt;if(row->row[0].intensity == -1)	row->row[0].intensity = NAN;</pre>						</li>					  </ul>					</li>					<li>how to detect 					  <ul>						<li>example from sdif-buf.c  							<pre>#include &lt;math.h&gt;//  finish if found cell with a real value (not a NaN)if(isfinite(*valueFound))    return ESDIF_SUCCESS;</pre>						</li>					  </ul>					</li>				</ul>				<li>very minimal modification to existing SDIF modules (modified by extension only)</li>				</ul>			</li>			<li>sdif-buffer module (new)			  <ul>			    <li>implementation of SDIFbuf_Buffer object, providing most common operations on a full set of SDIF data in memory (abstraction of code previously found in SDIF-buffer max external)			      <ul>			        <li><em>includes simple NaN support (e.g when searching for data forwards or backwards from a specified location)</em></li>			        <li><em>future: clean support for &quot;on demand&quot; data retrieval can be implemented here (see comments in source) </em></li>		          </ul>			    </li>	          </ul>			</li>			<li>sdif-interp module (new) 			  <ul>			    <li>implementation of SDIFinterp_Interpolator object, providing support for interpolating SDIF data in an SDIFbuf_Buffer instance			      <ul>			        <li><em>actual interpolation algorithms are modular (interpolator functions are declared to have type SDIFinterp_InterpolatorFn)</em></li>		          </ul>			    </li>	          </ul>			</li>			<li>sdif-util module (new)			  <ul>			    <li>Implementation of common generic SDIF operations:			                        <ul>			        <li>SDIFutil_CreateMatrix()</li>					<li>SDIFutil_CloneMatrix()</li>					<li>SDIFutil_CopyMatrix()</li>					<li>SDIFutil_MatrixEqual()</li>					<li>SDIFutil_LoadMatrixFloat32()</li>					<li>SDIFutil_LoadMatrixFloat64()</li>					<li>SDIFutil_GetMatrixCell()</li>					<li>SDIFutil_SetMatrixCell()</li>	              </ul>			    </li>		        <li><em>note: currently supports sdif_float32 and sdif_float64 matrix data only; mostly assumes all data is 64 bits (need to think about the cleanest and most efficient way to support  truly generic matrix operations)</em></li>			    <li><em>perhaps these functions should just be added to the SDIFmem module?</em></li>			  </ul>			</li>	    </ul>	</li>    <li>SDIF-max externals		<ul>			<li>SDIF-buffer			  <ul>			    <li><em>same interface as before, but refactored to use generic library code (sdif-buffer module) instead </em></li>		        <li><em>added &quot;timeshift&quot; method (shift all frame times so earliest frame time == 0) </em></li>			  </ul>			</li>			<li>SDIF-info</li>			<li>SDIF-listpoke</li>			<li>SDIF-tuples			  <ul>			    <li><em>interpolation support added</em>			      <ul>			        <li class="style1">added &quot;direction&quot; message </li>		            <li><em>optional &quot;interp N&quot; argument to &quot;tuples&quot; message, where N specifies interpolator to be used: </em>				      <pre>typedef enum {  INTERP_MODE_NONE,  INTERP_MODE_LINEAR,  INTERP_MODE_LAGRANGE2,  INTERP_MODE_LAGRANGE3,  INTERP_MODE_END} InterpMode;</pre>				    </li>			      </ul>			    </li>	          </ul>			</li>	    </ul>	</li></ul><h3>Stereo Incandescence project specific work </h3><ul>	<li>Max externals        <ul>			<li>SDIF-importSEP              <ul>                <li>read Solar Energetic Particle data from files into a named SDIF-buffer                  <ul>                    <li><em>SEP format is generic fixed-column ASCII, but some columns have special meanings/dependencies, so this tool won't be much use for anything else </em></li>				  </ul>                </li>			    <li>measurements which were  recorded as &quot;-1&quot; are stored in SDIF matrix as NaN (measurement not available) </li>              </ul>	      </li>	    </ul>  </li></ul>  <hr><a name="manifest"></a><h2>Manifest</h2><h3>Notes</h3>	<ul>      <li>README.htm (this file)</li>    </ul><h3>SDIF-generic</h3><ul>	<li>      new source		<ul>			<li>SDIFbuf_Buffer class              <ul>                <li>sdif-buf.h                    <ul>                      <li><em>public interface to sdif-buf module; API is documented here</em> </li>                    </ul>                </li>                <li>sdif-buf-private.h</li>                <li>sdif-buf.c</li>              </ul>			</li>			<li>SDIFinterp_Interpolator class              <ul>                <li>sdif-interp.h                    <ul>                      <li><em>public interface to sdif-interp module; API is documented here</em> </li>                    </ul>                </li>                <li>sdif-interp-implem.c                  <ul>                    <li><span class="style1">implementation of common interpolator functions (so far: Linear, Lagrange-Waring)</span></li>                  </ul>                </li>                <li>sdif-interp-implem.h</li>                <li>sdif-interp-private.h</li>                <li>sdif-interp.c</li>              </ul>			</li>			<li>SDIF utils			  <ul>			    <li>sdif-util.h                    <ul>                      <li><em>public interface to sdif-util module; API is documented here</em></li>                    </ul>		        </li>		        <li>sdif-util.c</li>			  </ul>			</li>	    </ul>	</li>	<li>      modified source	  	<ul>	        <li>existing SDIF modules              <ul>                <li>sdif.c                    <ul>                      <li><em>appended new result messages to error_string_array[]</em></li>                      <li><em>added safety check for invalid result code in SDIF_GetErrorString()</em></li>                    </ul>                </li>                <li>sdif.h	              <ul>	                <li><em>added new result codes to enum SDIFresult</em></li>	                <li><em>added end marker ESDIF_END_OF_SDIF_VALUES to enum SDIFresult </em></li>                  </ul>                </li>                <li>sdif-mem.c	              <ul>	                <li><em>added static unsigned char SDIFmem_InitializedFlag</em></li>	                <li><em>added SDIFmem_Initialized() to allow client modules to make sure SDIFmem has been properly initialized </em></li>	                <li><em>exposed user-specified alloc/free functions to clients, through SDIFmem_Alloc() and SDIFmem_Free()</em></li>                  </ul>                </li>                <li>sdif-mem.h	              <ul>	                <li><em>additions to </em><em>API documented in comments </em></li>                  </ul>                </li>              </ul>	        </li>        </ul>	</li>	<li>      unmodified source		<ul>		  <li>existing SDIF modules		    <ul>		      <li>sdif-types.c</li>		      <li>sdif-types.h</li>		      <li>sdifu.c</li>		      <li>sdifu.h</li>		      <li>sdif-sinusoids.c</li>		      <li>sdif-sinusoids.h</li>	        </ul>		  </li>		  <li>other stuff		    <ul>		      <li>test-sdif-mem.c                  <ul>                    <li><em>should test code be part of the core distribution? </em></li>                  </ul>	          </li>		      <li>Makefile (only used for test-sdif-mem.c)		        <ul>		          <li><em>ditto</em></li>	            </ul>		      </li>	        </ul>		  </li>	    </ul>	</li>	<li>      unit tests (new)	  <ul>	  	<li><em>provided &quot;as is&quot;: suite of tests for verifying correctness of added SDIF library code by various means (mostly hammering on an SDIFbuf_buffer instance with lots of random data and then verifying that results of various operations are what we expected) </em></li>		<li>        source			<ul>			  <li>sdif-unit.c			    <ul>			      <li><em>test framework (main is here) </em></li>		        </ul>			  </li>			  <li>sdif-unit.h</li>			  <li>sdif-unit-utils.c			    <ul>			      <li><em>common support code used by various tests </em></li>		        </ul>			  </li>			  <li>sdif-unit-utils.h</li>			  <li>sdif-unit-test*.c			    <ul>			      <li><em>these are the individual tests (one test per file) </em></li>		        </ul>			  </li>		    </ul>		</li>		<li>        cw project			<ul>			  <li>unit_tests.mcp (builds standalone application) </li>			</ul>		</li>	  </ul>	</li></ul><h3>SDIF-max</h3><ul>	<li>	  max externals (one cw project per object)		<ul>			<li>SDIF-buffer (modified)			  <ul>			    <li>SDIF-buffer.c</li>		        <li>SDIF-buffer.h</li>			  </ul>			</li>			<li>SDIF-info (modified)			  <ul>			    <li>SDIF-info.c</li>	          </ul>			</li>			<li>SDIF-listpoke (modified)			  <ul>			    <li>SDIF-listpoke.c</li>		      </ul>			</li>			<li>SDIF-tuples (modified)			  <ul>			    <li>SDIF-tuples.c</li>		      </ul>			</li>			<li>SDIF-importSEP (new)			  <ul>			    <li>SDIF-importSEP.c</li>		        <li>README.txt 		          <ul>		            <li><em>documentation of SEP data file format</em></li>	              </ul>		        </li>		      </ul>			</li>	    </ul>	</li>	<li>      max test patches / demos	  	<ul>			<li>how_to_use_interp			  <ul>			    <li><em>simple example, showing how to use SDIF-importSEP and SDIF-tuples objects (including interpolation) </em></li>		      </ul>			</li>			<li>sep_interp_demo			  <ul>			    <li><em>slightly better example with graphics, demonstrating interpolation of SEP data (displayed on multislider graphs) </em></li>		      </ul>			</li>			<li>unit_test*			  <ul>			    <li><em>quasi &quot;unit test&quot; patches used to verify that new builds of SDIF-buffer object and friends exhibit identical behavior to previous version (not very fancy, just a lot of console output which can be checked for diffs) </em></li>		      </ul>			</li>	    </ul>	</li>	<li>      data files	  	<ul>        	<li>sep1_*        	  <ul class="style1">        	    <li>sample SEP data, needed for running max demo patches (lots more SEP data available at &lt;ftp://cse.ssl.berkeley.edu/sounds/data/&gt;, at least until Laura takes it down...) </li>      	    </ul>        	</li>	    </ul>	</li></ul><hr><a name="minor"></a><h2>Minor Issues</h2><ul><li>SDIF-buffer.c	<ul>	  <li>plumbing for ListDelete() already existed but hasn't been implemented </li>	  <li>minor kludginess (look for #ifdef KLUDGE) </li>		<ul>		  <li>ReadStream()			<ul>			  <li>this is bad place for logic to check for valid stream mode				<ul>				  <li><em>works ok, but would be cleaner if SDIFmem_BeginReadStream() did this check </em></li>				</ul>			  </li>			  <li>buffer state doesn't get updated if file contained no frames				<ul>				  <li><em>but this is the way SDIF-buffer always behaved, so maybe better leave it alone...</em></li>				</ul>			  </li>			</ul>		  </li>		</ul>	</ul>  </li>  <li>initialization sequence    <ul>      <li>proper initialization is voluntary</li>        <ul>          <li>in all cases, SDIFmem_Init() should be called first, to set up user's malloc()/free() callbacks for use by other SDIF modules </li>        </ul>      <li>improper initialization is not detected, but it could (should?) be done by calling SDIFmem_Initialized() from other SDIF*_Init() functions which depend on sdif-mem.c      </li>    </ul>  </li>  <li>many of the new  library functions   require matrix cell position or matrix dimension arguments; these are expected to be provided in (column, row) order... is that strange? </li>  <li>new code uses C99-style "//" comments, ok?</li></ul><hr><a name="todo"></a><h2> To Do List</h2><ul>    <li>sdif-max documentation needed (ask Matt to do this?)      <ul>        <li>SDIF-buffer.help          <ul>            <li>&quot;timeshift&quot; message (new)</li>            <li>&quot;write&quot; message (undocumented)</li>            <li>&quot;change-stream-ID&quot; message (undocumented)</li>            <li>&quot;change-frametype&quot; message (undocumented)</li>            <li>&quot;debug&quot; message (undocumented)   </li>          </ul>        </li>        <li>SDIF-tuples.help          <ul>            <li>&quot;direction&quot; message (new) </li>            <li>&quot;interp&quot; argument + interpolation selector param to &quot;tuples&quot; message (changed)</li>            <li>&quot;version&quot; message (undocumented)</li>            <li>&quot;reltime&quot; message (undocumented)</li>            <li>&quot;max_rows&quot; message (undocumented) </li>          </ul>        </li>        <li>SDIF-listpoke.help          <ul>            <li>&quot;newmatrix&quot; message (undocumented)</li>            <li>&quot;matrixtype&quot; message (undocumented)</li>            <li>&quot;numcolumns&quot; message (undocumented)</li>            <li>remove extra stuff (mistakenly copied from SDIF-buffer.help?)               <ul>                <li> everything about &quot;tuples&quot; message</li>                <li>everything about messages which change &quot;tuples&quot; behavior </li>              </ul>            </li>          </ul>        </li>      </ul>    </li></ul></body></html>
