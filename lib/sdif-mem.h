@@ -120,6 +120,13 @@ SDIFresult SDIFmem_ReadFrame(FILE *f, SDIFmem_Frame *putithere);
    Updates the size and numMatrices fields in the frame header. */
 SDIFresult SDIFmem_AddMatrix(SDIFmem_Frame f, SDIFmem_Matrix m);
 
+
+/* SDIFmem_RemoveMatrix --
+   Removes the given matrix from the given frame by removing it from the frame's
+   linked list of matrices and then calling SDIFmem_FreeMatrix() on it. */
+SDIFresult SDIFmem_RemoveMatrix(SDIFmem_Frame f, SDIFmem_Matrix m);
+
+
 /* Write the given SDIFmem_Frame, including the frame header and all the
    matrices, to the given file handle.  */
 SDIFresult SDIFmem_WriteFrame(FILE *sdif_handle, SDIFmem_Frame f);

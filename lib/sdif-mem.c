@@ -264,6 +264,30 @@ SDIFresult SDIFmem_AddMatrix(SDIFmem_Frame f, SDIFmem_Matrix m) {
     return ESDIF_SUCCESS;
 }
 
+SDIFresult SDIFmem_RemoveMatrix(SDIFmem_Frame f, SDIFmem_Matrix m) {
+	SDIFmem_Matrix p;
+	
+	if (f->matrices == m) {
+		/* m is the first in f's linked list of matrices */
+		f->matrices = m->next;
+		SDIFmem_FreeMatrix(m);
+		return ESDIF_SUCCESS;
+	}
+
+	/* Search the rest of the linked list */
+	for (p=f->matrices; p->next != NULL; p=p->next) {
+		if (p->next == m) {
+			p->next = m->next;
+			SDIFmem_FreeMatrix(m);
+			return ESDIF_SUCCESS;
+		}
+	}
+	
+	/* Didn't find it */
+#define 	ESDIF_MATRIX_NOT_FOUND -99;
+	return ESDIF_MATRIX_NOT_FOUND;
+}
+
 
 SDIFresult SDIFmem_WriteMatrix(FILE *sdif_handle, SDIFmem_Matrix m) {
     SDIFresult r;
