@@ -1,45 +1,6 @@
 global { 
-  srate 44100;
-  krate 882;
-  outchannels 1;
-
-  //route(stereo,pitch_est,track);
-  //send(out; ;stereo);
-}
-
-// *********************************************
-instr out() {
-  asig l,r;
-
-  l = input[0] * 0.8 + input[1] * 0.2;
-  r = input[0] * 0.2 + input[1] * 0.8;
-  output(l,r);
-  }
-
-
-// *********************************************************
-
-instr onepitch() {
-  imports ksig newfreq, newamp;
-	ksig freq, amp, smfreq;
-  table wave(harm,1024,1,0,0.9,0,0.5,0.4,0.4);
-  asig sound;
-
-  idump(1);
-
-	if (!itime) { // init
-		freq = 0;
-		amp = 1;
-  }
-
-	if (newfreq) {
-		freq = newfreq;
-		amp = newamp;
-  }
-
-  smfreq = port(freq,0.01);
-	sound = oscil(wave,freq) * amp;
-	output(sound);
+  srate 48000;
+  krate 200;
 }
 
 // *********************************************************
@@ -50,37 +11,33 @@ instr pitch_est() {
   imports table sdif_table3;
   imports table sdif_table4;
   imports table sdif_table5;
-  tablemap tab(sdif_table1,sdif_table1, sdif_table2, sdif_table3, sdif_table4, sdif_table5);
+  tablemap tab(sdif_table1, sdif_table2, sdif_table3, sdif_table4, sdif_table5);
   table mydata(empty,1000);
-  table wave(harm,1024,1,0,1,0.2,0.3,0.4);
-  imports ksig changed;
+  table wave(harm,1024,1,0,1,0.2,0.3,4);
+  imports exports ksig changed;
   ksig freq, smfreq;
 
-  idump(2);
   if (changed) {
      getmatrix(tab[changed],1,mydata);
 	 changed = 0;  
   }
 
   freq = find_best_pitch(mydata);
-  //kdump(freq);
-  smfreq = port(freq,0.01);
-  output(oscil(wave,smfreq)/5); // 5 is just a scaling factor
+  smfreq = port(freq,0.2);
+  output(oscil(wave,smfreq)/5);
 }
 
 kopcode find_best_pitch(table mat) {
 	ksig nr,i,best,p,str;
 
 	nr = numrows(mat);
-	//kdump(nr);
-	best = -1;
+	best = 0;
 
 	i = 0; while (i < nr) {
-		//kdump(i,matread(mat,i,0),matread(mat,i,1));
-		str = matread(mat,i,1);
+		str = matread(mat,i,0);
 		if (str > best) {
 			best = str;
-			p = matread(mat,i,0);
+			p = matread(mat,i,1);
 		}
 		i = i + 1;
 	}
@@ -99,34 +56,32 @@ instr track() {
   tablemap tab(sdif_table1, sdif_table1, sdif_table2, sdif_table3, sdif_table4, sdif_table5);
   table mydata(empty,1000);
   table pure(harm,1024,1);
-  imports ksig changed;
+  imports exports ksig changed;
   ksig freq, smfreq, max, f[1024], amp[1024], ind[1024];
   asig i, sum;
   oparray oscil[1024];
 
-  idump(3);
   if (changed) {
+     kdump(3,3,3,3,3,3,changed);
      getmatrix(tab[changed],1,mydata);
-     maketracks(f,amp,ind,mydata,max);
 	 changed = 0;  
   }
-   
+  maketracks(f,amp,ind,mydata,max);
+
+  kdump(max);  
   i=0; sum = 0; while (i < max) {
     sum = sum + oscil[i](pure,f[i]) * amp[i];
 	i = i + 1;
   }
 
-  output(sum*2);
+  output(sum);
 }
 
 kopcode maketracks(ksig freq[1024], ksig amp[1024], ksig ind[1024], table mat, ksig max) {
-  ksig i, nr, ix, a, f, ph, k, used[1024], oldmax;
+  ksig i, nr, ix, a, f, ph, k;
 
   nr = numrows(mat);
-  
-  oldmax = max;
-  i = 0; while (i < max) { used[i] = 0; i=i+1; }
-
+ 
   i = 0; while (i < nr) {
     ix = matread(mat,i,0);
 	a = matread(mat,i,1);
@@ -138,25 +93,8 @@ kopcode maketracks(ksig freq[1024], ksig amp[1024], ksig ind[1024], table mat, k
 	freq[k] = f;
     amp[k] = a;
 	ind[k] = ix;
-	used[k] = 1;
 	i = i + 1;
   }
-
-
-  // move new tracks (in slots oldmax..max) to slots of dead
-  // tracks 
-
-  i=0; while (i<max && max > oldmax) {
-    if (!used[i]) {
-	  freq[i] = freq[max-1];
-	  amp[i] = amp[max-1];
-	  ind[i] = ind[max-1];
-	  max = max - 1;
-	 }
-	 i = i + 1;
-  }
-
-  //kdump(max);
 }
 
 kopcode get_ind(ksig ix, ksig ind[1024], ksig max) {
@@ -169,66 +107,11 @@ kopcode get_ind(ksig ix, ksig ind[1024], ksig max) {
   return(i+1);
 }
 
-// *******************************************************
-instr stft(size, len) {
-  imports table sdif_table1;
-  imports table sdif_table2;
-  imports table sdif_table3;
-  imports table sdif_table4;
-  imports table sdif_table5;
-  tablemap tab(sdif_table1, sdif_table1, sdif_table2, sdif_table3, sdif_table4, sdif_table5);
-  imports ksig changed;
-  table info(empty,10);
-  table data(empty,10000);
-  table re(empty, 2048);
-  table im(empty, 2048);
-  table win(window,len*s_rate,2);
-  table invwin(empty,len*s_rate);
-  ksig i;
-  ivar fftlen;
-
-  // i-time
-  idump(4);
-  make_inv_win(win,invwin);
-  len = len * s_rate;
-  idump(len,size);
-
-  // k-time
-  
-  if (changed) {
-    getmatrix(tab[changed],1,info);
-	getmatrix(tab[changed],2,data);
-	kdump(matread(info,0,0)*size);
-	i = 0; while (i < size) {
-	  tablewrite(re,i,matread(data,i,0));
-	  tablewrite(im,i,matread(data,i,1));
-	  i = i + 1;
-	}
-	changed = 0;
-  }
-  
-  // a-time
-
-  // IFFT parameters: real part of coeffs, im part of coeffs, IFFT output length,
-  //                  shift after each IFFT, number of coeffs, synthesis window 
-
-  output(ifft(re,im,len,len/4,size,invwin));
-}
-
-iopcode make_inv_win(table win, table inv) {
-  ivar i;
-
-  idump(ftlen(win));
-  i = 0; while (i < ftlen(win)) {
-    tablewrite(inv,i,min(1e4,1/tableread(win,i)/3200));
-	i = i + 1;
-  }
-}
 
 // *******************************************************
 
-opcode matread(table mat, xsig i, xsig j) {
-	xsig nr, nc;
+kopcode matread(table mat, ksig i, ksig j) {
+	ksig nr, nc;
 
 	nr = tableread(mat,0);
 	nc = tableread(mat,1);
@@ -241,20 +124,19 @@ kopcode numrows(table mat) {
 }
 
 kopcode getmatrix(table t,ivar ind,table mat) {
-  // put matrix type #ind from t1 in mat
-	ksig i, pos, r, c, ct, x, found, type;
+  // put matrix #ind from t1 in mat
+	ksig i, pos, r, c, ct, x;
 
-	i = 0; pos = 1; found = 0;
-	while (!found) {
-	    type = tableread(t,pos);
+	i = 0; pos = 1;
+	while (i < ind-1) {
 		r = tableread(t,pos+1);
 		c = tableread(t,pos+2);
-		if (type == ind) { found = 1; } else {
-		  pos = pos + 3 + r * c;
-		}
+		pos = pos + 2 + r * c;
+		i = i + 1;
 	}
+	r = tableread(t,pos+1);
+    c = tableread(t,pos+2);
 
-		
 	tablewrite(mat,0,r); tablewrite(mat,1,c);
 
 	ct = 0; while (ct < r * c) {
@@ -262,5 +144,6 @@ kopcode getmatrix(table t,ivar ind,table mat) {
 		tablewrite(mat,ct+2,x);
 		ct = ct + 1;
 	}
+
 }
 

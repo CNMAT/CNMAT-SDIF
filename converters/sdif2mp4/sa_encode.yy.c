@@ -52,12 +52,12 @@ struct yysvf *yyestate;
 extern struct yysvf yysvec[], *yybgin;
 
 # line 3 "sa_encoder.lex"
-/* $Id: sa_encode.yy.c,v 1.2 2001/11/27 21:57:37 matt Exp $ */
+/* $Id: sa_encode.yy.c,v 1.3 2001/11/27 22:23:53 matt Exp $ */
 
 # line 4 "sa_encoder.lex"
 /* $Log: sa_encode.yy.c,v $
- * Revision 1.2  2001/11/27 21:57:37  matt
- * From /disk5/disk6/people/matt/sdif/saol/sdif2mp4.oldsdif
+ * Revision 1.3  2001/11/27 22:23:53  matt
+ * From /disk5/disk6/people/matt/sdif/new-saol
  *
 # Revision 1.2  1998/05/06  21:44:26  eds
 # FCD version.
@@ -1602,7 +1602,7 @@ char yyextra[] = {
 0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,
 0};
-#ident	"$Revision: 1.2 $"
+#ident	"$Revision: 1.3 $"
 
 int yylineno =1;
 # define YYU(x) x
