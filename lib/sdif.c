@@ -107,11 +107,22 @@ static char *error_string_array[] = {
     "I/O error: couldn't write",
     "I/O error: couldn't read",
     "Out of memory",
-    "Frame has two matrices with the same MatrixType"
+    "Frame has two matrices with the same MatrixType",
+    "Not initialized",
+    "Not available",
+    "Failing on NaN",
+    "Frame already exists",
+    "Requested operation failed",
+    "Unknown error",
+    "Illegal error code"
 };
 
 char *SDIF_GetErrorString(SDIFresult error_code) {
     if (error_code == ESDIF_SEE_ERRNO) return strerror(errno);
+    
+    if (error_code > ESDIF_END_OF_SDIF_VALUES)
+      return error_string_array[ESDIF_END_OF_SDIF_VALUES];
+
 
     return error_string_array[error_code];
 }

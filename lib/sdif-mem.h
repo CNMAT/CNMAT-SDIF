@@ -66,6 +66,20 @@ typedef struct SDIFmemFrameStruct {
 SDIFresult SDIFmem_Init(void *(*MemoryAllocator)(int numBytes),
               void (*MemoryFreer)(void *memory, int numBytes));
 
+/* SDIFmem_Initialized --
+   Returns ESDIF_SUCCESS if SDIFmem_Init() has been called.
+   Returns ESDIF_NOT_INITIALIZED otherwise. */
+SDIFresult SDIFmem_Initialized(void);
+
+/* SDIFmem_Alloc --
+   Allocate a block of memory of the requested size, using allocator provided by user.
+   Returns 0 if request cannot be satisfied (out of memory). */
+void *SDIFmem_Alloc(int numBytes);
+
+/* SDIFmem_Free --
+   Free a block of memory of the specified size, which was previously obtained using 
+   allocator provided by user (e.g. by calling SDIFmem_Alloc()). */
+void SDIFmem_Free(void *memory, int numBytes);
 
 /* Constructors */
 

@@ -46,16 +46,39 @@ Technologies, University of California, Berkeley.
 
 
 /* The user-supplied malloc/free procedures.  Also used in sdif-types.c */
-void *(*my_malloc)(int numBytes);
-void (*my_free)(void *memory, int numBytes);
+void *(*my_malloc)(int numBytes) = NULL;
+void (*my_free)(void *memory, int numBytes) = NULL;
+
+static unsigned char SDIFmem_InitializedFlag = 0;
 
 
 SDIFresult SDIFmem_Init(void *(*MemoryAllocator)(int numBytes), 
 			void (*MemoryFreer)(void *memory, int numBytes)) {
 	my_malloc = MemoryAllocator;
 	my_free = MemoryFreer;
+	
+	SDIFmem_InitializedFlag = 1;
 
 	return ESDIF_SUCCESS;
+}
+
+
+SDIFresult SDIFmem_Initialized(void)
+{
+  if(!SDIFmem_InitializedFlag)
+    return ESDIF_NOT_INITIALIZED;
+  
+  return ESDIF_SUCCESS;
+}
+
+
+void *SDIFmem_Alloc(int numBytes) {
+  return (*my_malloc)(numBytes);
+}
+
+
+void SDIFmem_Free(void *memory, int numBytes) {
+  (*my_free)(memory, numBytes);
 }
 
 
