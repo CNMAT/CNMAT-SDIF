@@ -39,8 +39,6 @@ commercial licensing opportunities.
 */
 
 
-#define SDIF_BUFFER_VERSION "0.1.1"
-
 #include <stdio.h>
 #include <string.h> /* for strerror() */
 #include <assert.h>
@@ -50,22 +48,6 @@ commercial licensing opportunities.
 #include "sdif-mem.h"
 #include "sdif-buf.h"
 #include "sdif-buf-private.h"
-
-
-/***********************/
-/*                     */
-/* private class types */
-/*                     */
-/***********************/
-
-#ifndef SDIF_BOOLEAN
-typedef unsigned char Boolean;
-#undef TRUE
-#define TRUE 1
-#undef FALSE
-#define FALSE 0
-#define SDIF_BOOLEAN
-#endif
 
 
 /************************/

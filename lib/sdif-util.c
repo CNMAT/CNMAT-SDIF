@@ -44,21 +44,6 @@ commercial licensing opportunities.
 
 #define SDIF_UTILS_VERSION "0.1.0"
 
-/*****************/
-/*               */
-/* private types */
-/*               */
-/*****************/
-
-#ifndef SDIF_BOOLEAN
-typedef unsigned char Boolean;
-#undef TRUE
-#define TRUE 1
-#undef FALSE
-#define FALSE 0
-#define SDIF_BOOLEAN
-#endif
-
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -67,20 +52,6 @@ typedef unsigned char Boolean;
 #include "sdif.h"
 #include "sdif-mem.h"
 #include "sdif-util.h"
-
-
-/******************/
-/*                */
-/* private fields */
-/*                */
-/******************/
-
-
-/**********************************/
-/*                                */
-/* prototypes for private methods */
-/*                                */
-/**********************************/
 
 
 /**************************/

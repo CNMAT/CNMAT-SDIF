@@ -98,6 +98,18 @@ Music and Audio Technologies, University of California, Berkeley.
 
 #endif
 
+#ifndef SDIF_BOOLEAN
+typedef unsigned char Boolean;
+#undef TRUE
+#define TRUE 1
+#undef FALSE
+#define FALSE 0
+#define SDIF_BOOLEAN
+#endif
+
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

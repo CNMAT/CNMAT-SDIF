@@ -54,21 +54,6 @@ commercial licensing opportunities.
 #include "sdif-interp-private.h"
 
 
-/***********************/
-/*                     */
-/* private class types */
-/*                     */
-/***********************/
-
-#ifndef SDIF_BOOLEAN
-typedef unsigned char Boolean;
-#undef TRUE
-#define TRUE 1
-#undef FALSE
-#define FALSE 0
-#define SDIF_BOOLEAN
-#endif
-
 
 /************************/
 /*                      */
