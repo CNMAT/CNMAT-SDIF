@@ -1,0 +1,12 @@
+SOURCES = \
+src/sdif.c \
+src/sdif-mem.c \
+src/SDIF++.cxx \
+src/ZoomSlider.cxx \
+src/SDIFDisplay.cxx \
+src/SDIFDisplayColors.cxx \
+src/SDIFDisplaySTF.cxx \
+src/SDIFDisplayTRC.cxx \
+src/SDIFDisplayFQ0.cxx \
+src/SDIFDisplayContainer.cxx \
+src/SDIFDisplayMain.cxx

@@ -1,0 +1,226 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:532: checking for gcc
+configure:562: checking for cc
+configure:645: checking whether the C compiler (cc  ) works
+configure:661: cc -o conftest    conftest.c  1>&5
+Cannot connect to license server (-15,12:146) Connection refused
+
+ This product (cc) requires a license password. 
+ For license installation and trouble shooting 
+ information visit the web page: 
+
+         http://www.sgi.com/Support/Licensing/install_docs.html 
+
+ To obtain a Permanent license (proof of purchase
+ required) or an Evaluation license please
+ visit our license request web page: 
+
+         http://www.sgi.com/Products/license.html 
+
+         or send a blank email message to: 
+
+         license@sgi.com 
+
+ In North America, Silicon Graphics' customers may request 
+ Permanent licenses by sending a facsimile to: 
+
+         (415) 390-0537 
+
+         or by calling our technical support hotline 
+
+         1-800-800-4SGI 
+
+ If you are Outside of North America or you are not a Silicon 
+ Graphics support customer then contact your local support provider. 
+
+configure:687: checking whether the C compiler (cc  ) is a cross-compiler
+configure:692: checking whether we are using GNU C
+configure:701: cc -E conftest.c
+Cannot connect to license server (-15,12:146) Connection refused
+
+ This product (cc) requires a license password. 
+ For license installation and trouble shooting 
+ information visit the web page: 
+
+         http://www.sgi.com/Support/Licensing/install_docs.html 
+
+ To obtain a Permanent license (proof of purchase
+ required) or an Evaluation license please
+ visit our license request web page: 
+
+         http://www.sgi.com/Products/license.html 
+
+         or send a blank email message to: 
+
+         license@sgi.com 
+
+ In North America, Silicon Graphics' customers may request 
+ Permanent licenses by sending a facsimile to: 
+
+         (415) 390-0537 
+
+         or by calling our technical support hotline 
+
+         1-800-800-4SGI 
+
+ If you are Outside of North America or you are not a Silicon 
+ Graphics support customer then contact your local support provider. 
+
+configure:720: checking whether cc accepts -g
+configure:756: checking for c++
+configure:756: checking for g++
+configure:756: checking for gcc
+configure:756: checking for CC
+configure:788: checking whether the C++ compiler (CC  ) works
+configure:804: CC -o conftest    conftest.C  1>&5
+Cannot connect to license server (-15,12:146) Connection refused
+
+ This product (cpp) requires a license password. 
+ For license installation and trouble shooting 
+ information visit the web page: 
+
+         http://www.sgi.com/Support/Licensing/install_docs.html 
+
+ To obtain a Permanent license (proof of purchase
+ required) or an Evaluation license please
+ visit our license request web page: 
+
+         http://www.sgi.com/Products/license.html 
+
+         or send a blank email message to: 
+
+         license@sgi.com 
+
+ In North America, Silicon Graphics' customers may request 
+ Permanent licenses by sending a facsimile to: 
+
+         (415) 390-0537 
+
+         or by calling our technical support hotline 
+
+         1-800-800-4SGI 
+
+ If you are Outside of North America or you are not a Silicon 
+ Graphics support customer then contact your local support provider. 
+
+configure:830: checking whether the C++ compiler (CC  ) is a cross-compiler
+configure:835: checking whether we are using GNU C++
+configure:844: CC -E conftest.C
+Cannot connect to license server (-15,12:146) Connection refused
+
+ This product (cpp) requires a license password. 
+ For license installation and trouble shooting 
+ information visit the web page: 
+
+         http://www.sgi.com/Support/Licensing/install_docs.html 
+
+ To obtain a Permanent license (proof of purchase
+ required) or an Evaluation license please
+ visit our license request web page: 
+
+         http://www.sgi.com/Products/license.html 
+
+         or send a blank email message to: 
+
+         license@sgi.com 
+
+ In North America, Silicon Graphics' customers may request 
+ Permanent licenses by sending a facsimile to: 
+
+         (415) 390-0537 
+
+         or by calling our technical support hotline 
+
+         1-800-800-4SGI 
+
+ If you are Outside of North America or you are not a Silicon 
+ Graphics support customer then contact your local support provider. 
+
+configure:863: checking whether CC accepts -g
+configure:938: checking for numericsort in -lfltk
+configure:960: CC -o conftest    conftest.C -lfltk   1>&5
+Cannot connect to license server (-15,12:146) Connection refused
+
+ This product (cpp) requires a license password. 
+ For license installation and trouble shooting 
+ information visit the web page: 
+
+         http://www.sgi.com/Support/Licensing/install_docs.html 
+
+ To obtain a Permanent license (proof of purchase
+ required) or an Evaluation license please
+ visit our license request web page: 
+
+         http://www.sgi.com/Products/license.html 
+
+         or send a blank email message to: 
+
+         license@sgi.com 
+
+ In North America, Silicon Graphics' customers may request 
+ Permanent licenses by sending a facsimile to: 
+
+         (415) 390-0537 
+
+         or by calling our technical support hotline 
+
+         1-800-800-4SGI 
+
+ If you are Outside of North America or you are not a Silicon 
+ Graphics support customer then contact your local support provider. 
+
+C++ prelinker: warning: could not locate library -lfltk; assuming /usr/lib/libfltk.a
+ld: FATAL   9  : I/O error (-lfltk): No such file or directory
+configure: failed program was:
+#line 946 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char numericsort();
+
+int main() {
+numericsort()
+; return 0; }
+configure:986: checking how to run the C++ preprocessor
+configure:1004: CC -E  conftest.C >/dev/null 2>conftest.out
+Cannot connect to license server (-15,12:146) Connection refused
+
+ This product (cpp) requires a license password. 
+ For license installation and trouble shooting 
+ information visit the web page: 
+
+         http://www.sgi.com/Support/Licensing/install_docs.html 
+
+ To obtain a Permanent license (proof of purchase
+ required) or an Evaluation license please
+ visit our license request web page: 
+
+         http://www.sgi.com/Products/license.html 
+
+         or send a blank email message to: 
+
+         license@sgi.com 
+
+ In North America, Silicon Graphics' customers may request 
+ Permanent licenses by sending a facsimile to: 
+
+         (415) 390-0537 
+
+         or by calling our technical support hotline 
+
+         1-800-800-4SGI 
+
+ If you are Outside of North America or you are not a Silicon 
+ Graphics support customer then contact your local support provider. 
+configure: failed program was:
+#line 999 "configure"
+#include "confdefs.h"
+#include <stdlib.h>
+configure:1029: checking for ANSI C header files
+configure:1042: /lib/cpp  conftest.C >/dev/null 2>conftest.out

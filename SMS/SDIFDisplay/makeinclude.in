@@ -1,0 +1,30 @@
+prefix			=	@prefix@
+exec_prefix	=	@exec_prefix@
+bindir			=	@bindir@
+includedir	=	@includedir@
+libdir			=	@libdir@
+srcdir			=	@srcdir@
+VPATH				=	@srcdir@
+
+# compiler names:
+CXX		=@CXX@
+CC		=@CC@
+MAKEDEPEND	=@MAKEDEPEND@
+
+# flags for C++ compiler:
+CFLAGS		=@CFLAGS@
+CXXFLAGS	=@CXXFLAGS@
+
+FLTKDIR = @FLTKDIR@
+FLTKLIB = @FLTKLIB@
+FLTKINC = @FLTKINC@
+
+# libraries to link with:
+LDLIBS		=@LDFLAGS@ @LIBS@ -L/usr/X11R6/lib $(FLTKLIB) -lfltk -lX11 -lXext -lm
+
+# static fltk linkage:
+LDLIBS_FLTK_STATIC              =@LDFLAGS@ $(FLTKDIR)/lib/libfltk.a -L/usr/X11R6/lib -lX11 -lXext -lm 
+
+#
+# End of "$Id: makeinclude.in,v 1.1 2001/11/28 00:41:10 matt Exp $".
+#

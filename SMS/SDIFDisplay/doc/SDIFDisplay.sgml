@@ -1,0 +1,73 @@
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
+	<refentry id="SDIFDisplay">
+	<refmeta>
+		<refentrytitle>SDIFDisplay</refentrytitle>
+		<manvolnum>1</manvolnum>
+	</refmeta>
+	<refnamediv>
+		<refname>SDIFDisplay</refname>
+		<refpurpose>
+			Display the contents of an <acronym>SDIF</> file.
+		</refpurpose>
+	</refnamediv>
+	<refsynopsisdiv>
+		<cmdsynopsis>
+			<command>SDIFDisplay</command>
+			<arg choice="req">file</arg>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+	<refsect1><title>Description</title>
+		<para>
+			<command>SDIFDisplay</> displays the contents of the specified 				<acronym>SDIF</> file. <acronym>SDIF</> stands for Sound Description Interchange Format.  Currently <command>SDIFDisplay</> displays the following <acronym>SDIF</> Standard Frame Types:
+			<simplelist columns="2" type="horiz">
+				<member>1FQ0</member><member>Fundamental Frequency Estimate</member>
+				<member>1STF</member><member>Discrete Short-Term Fourier Transform</member>
+				<member>1TRC</member><member>Sinusoidal Tracks</member>
+			</simplelist>
+			<acronym>SDIF</> and the <acronym>SDIF</> Standard Frame Types are described at the 
+			<ulink url="http://cnmat.CNMAT.Berkeley.EDU/SDIF/">
+				<citetitle>CNMAT <acronym>SDIF</> Homepage</citetitle>
+			</ulink>.
+		</para>
+		<refsect2><title>Graphical User Interface</title>
+			<para>
+				The <command>SDIFDisplay</> window is divided into groups, each containing a visual representation of an <acronym>SDIF</> stream. Each group has it's own horizontal and vertical scrollbars. Note that these scrollbars can be used for both scrolling and zooming: When the thumb in grabbed in the middle, the slider scrolls, when grabbed at the top or buttom, it changes zoom. The vertical scale can be increased even more with a special button. When a horizontal scrollbar is used while pressing the <keycap>Control</keycap> key, the other horizontal scrollbars follow it.
+			</para>
+			<para>
+					The color scale of each group can be controled, in order to see parts of the data that otherwise would be too dark.
+			</para>
+		</refsect2>
+	</refsect1>
+	<refsect1><title>Limitations</title>
+		<para>
+			This version of <command>SDIFDisplay</> expects <acronym>SDIF</> files that contain only one stream per <acronym>SDIF</> Standard Frame Type.
+			Please send feedbacks and bug-reports to the author.
+		</para>
+	</refsect1>
+	<refsect1><title>License</title>
+		<para>
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+		</para>
+	</refsect1>
+	<refsect1>
+		<refsect1info>
+			<author>
+  			<firstname>Maarten</firstname>
+		  	<surname>de Boer</surname>
+		  	<affiliation>
+					<shortaffil>IUA-UPF</shortaffil>
+		    	<orgname>Institut de l'Audiovisual, Universitat Pompeu Fabra, Barcelona</orgname>
+		    	<orgdiv>Music Technology Group</orgdiv>
+		  	</affiliation>
+			</author>
+		</refsect1info>
+		<title>Author</title>
+		<para>
+			Maarten de Boer <email>maarten.deboer@iua.upf.es</email>, Music Technology Group, Institut de l'Audiovisual, Universitat Pompeu Fabra, Barcelona
+		</para>
+	</refsect1>
+</refentry>
+

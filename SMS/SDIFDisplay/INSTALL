@@ -1,0 +1,15 @@
+REQUIRES
+	SDIFDisplay requires the fltk user interface library,
+	which can be found at http://www.fltk.org	
+
+INSTALLATION
+
+  UNIX
+
+    To build SDIFDisplay, run 
+      ./configure
+      make
+      make install
+
+  Windows
+   Use visualc/SDIFDisplay.dsw

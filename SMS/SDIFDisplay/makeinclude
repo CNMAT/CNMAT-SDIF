@@ -1,0 +1,29 @@
+prefix			=	/usr/local
+exec_prefix	=	${prefix}
+bindir			=	${exec_prefix}/bin
+includedir	=	${prefix}/include
+libdir			=	${exec_prefix}/lib
+srcdir			=	.
+
+# compiler names:
+CXX		=CC
+CC		=cc
+MAKEDEPEND	=$(CXX) -M
+
+# flags for C++ compiler:
+CFLAGS		= -O2 -fullwarn  
+CXXFLAGS	= -O2 -fullwarn -woff 3322 
+
+FLTKDIR = 
+FLTKLIB = 
+FLTKINC = 
+
+# libraries to link with:
+LDLIBS		=  -L/usr/X11R6/lib $(FLTKLIB) -lfltk -lX11 -lXext -lm
+
+# static fltk linkage:
+LDLIBS_FLTK_STATIC              = $(FLTKDIR)/lib/libfltk.a -L/usr/X11R6/lib -lX11 -lXext -lm 
+
+#
+# End of "$Id: makeinclude,v 1.1 2001/11/28 00:41:10 matt Exp $".
+#

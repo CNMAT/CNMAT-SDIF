@@ -1,0 +1,118 @@
+dnl # -*- sh -*-
+dnl # Check for unique file
+
+AC_INIT(src/SDIFDisplay.cxx)
+
+dnl # Check for programs..
+
+AC_PROG_CC
+AC_PROG_CXX
+
+uname=`uname`
+uversion=`uname -r | sed -e '1,$s/\.//g'`
+if test "$uname" = "IRIX64"; then
+    uname="IRIX"
+fi
+
+dnl All tests done with the C++ compiler...
+AC_LANG_CPLUSPLUS
+
+FLTKDIR=""
+FLTKLIB=""
+FLTKINC=""
+
+AC_ARG_WITH([fltk-dir], 
+  [ --with-fltk-dir=dir specify the Fltk source dir], 
+  [ 
+    FLTKDIR="$withval"
+    FLTKLIB="-L$withval/lib"
+    FLTKINC="-I$withval"
+  ], [])
+
+AC_SUBST(FLTKDIR)
+AC_SUBST(FLTKLIB)
+AC_SUBST(FLTKINC)
+
+if test "$X_PRE_LIBS" != ""; then
+        echo "Ignoring libraries \"$X_PRE_LIBS\" requested by configure."
+fi
+if test "$X_LIBS" = " -L/usr/lib"; then
+        echo "Ignoring X library directory \"$X_LIBS\" requested by configure."
+        X_LIBS=""
+fi
+
+
+AC_CHECK_LIB(fltk,numericsort,X_LIBS="$X_LIBS -lfltk -lX11 -lXext"
+AC_DEFINE(HAVE_LIBFLTK))
+
+dnl Checks for header files.
+AC_HEADER_STDC
+
+LIBS="$LIBS$X_LIBS"
+CFLAGS="$CFLAGS $X_CFLAGS"
+CPPFLAGS="$CPPFLAGS $X_CFLAGS"
+
+MAKEDEPEND="\$(CXX) -M"
+
+dnl# add warnings to compiler switches:
+dnl# do this last so messing with switches does not break tests
+if test -n "$GXX"; then
+    CFLAGS="-Wall $CFLAGS"
+    CXXFLAGS="-Wall -Wno-return-type $CXXFLAGS"
+    if test -z "$DEBUGFLAG"; then
+        CFLAGS="-O2 $CFLAGS"
+        CXXFLAGS="-O2 $CXXFLAGS"
+    fi
+    if test "$PICFLAG" = 1; then
+    	CFLAGS="-fPIC $CFLAGS"
+    	CXXFLAGS="-fPIC $CXXFLAGS"
+    fi
+else
+    case `(uname) 2>/dev/null` in
+        IRIX*)
+	    # Running some flavor of IRIX; see which version and
+	    # set things up according...
+	    if test "$uversion" -ge 62; then
+	        # We are running IRIX 6.2 or higher; uncomment the following
+		# lines if you don't have IDO 7.2 or higher:
+		#
+		#     CXX="CC -n32"
+		#     CC="cc -n32"
+		#     LD="ld -n32"
+		#     MAKEDEPEND="CC -M"
+
+        	# -woff 3322 is necessary due to errors in Xlib headers on IRIX
+        	CFLAGS="-fullwarn $CFLAGS"
+        	CXXFLAGS="-fullwarn -woff 3322 $CXXFLAGS"
+	    else
+        	CXXFLAGS="+w +pp $CXXFLAGS"
+	    fi
+	    if test -z "$DEBUGFLAG"; then
+        	CFLAGS="-O2 $CFLAGS"
+        	CXXFLAGS="-O2 $CXXFLAGS"
+	    fi
+	    ;;
+	HP-UX*)
+	    # Running HP-UX; these options should work for the HP compilers.
+	    if test -z "$DEBUGFLAG"; then
+		CFLAGS="+O2 $CFLAGS"
+		CXXFLAGS="+O2 +W336,501,736,740,749,829 $CXXFLAGS"
+	    fi
+	    ;;
+	*)
+	    # Running some other operating system; inform the user they
+	    # should contribute the necessary options to fltk-bugs@easysw.com...
+	    ;;
+    esac
+fi
+
+CFLAGS="$DEBUGFLAG $CFLAGS"
+CXXFLAGS="$DEBUGFLAG $CXXFLAGS"
+
+AC_SUBST(MAKEDEPEND)
+
+AC_OUTPUT(makeinclude)
+
+dnl#
+dnl# End of "$Id: configure.in,v 1.1 2001/11/28 00:41:10 matt Exp $".
+dnl#
