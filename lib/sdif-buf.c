@@ -1427,3 +1427,21 @@ SDIFresult SDIFbuf_GetColumnRanges(SDIFbuf_Buffer b, const char *matrixType, sdi
 	return  ESDIF_SUCCESS;  
 }
 
+SDIFresult SDIFbuf_GetColumnRange(SDIFbuf_Buffer b, const char *matrixType, sdif_int32 column, 
+								   sdif_float64 *min, sdif_float64 *max) {
+	/* Cheesy implementation: find ranges of all columns up to the desired one and then
+	   return just that one. */
+#define MAX_COLUMNS 100	   
+	
+	sdif_float64 all_mins[MAX_COLUMNS];
+	sdif_float64 all_maxes[MAX_COLUMNS];
+	SDIFresult r;
+	
+	if (column >= MAX_COLUMNS) return ESDIF_OPERATION_FAILED;
+	r = SDIFbuf_GetColumnRanges(b, matrixType, column+1, all_mins, all_maxes);
+	if (r != ESDIF_SUCCESS) return r;
+	
+	*min = all_mins[column];
+	*max = all_maxes[column];
+	return ESDIF_SUCCESS;
+}

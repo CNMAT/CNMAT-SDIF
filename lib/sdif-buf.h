@@ -440,3 +440,8 @@ SDIFresult SDIFbuf_GetMaxNumColumns(SDIFbuf_Buffer b, const char *matrixType, sd
 SDIFresult SDIFbuf_GetColumnRanges(SDIFbuf_Buffer b, const char *matrixType, sdif_int32 ncols, 
 								   sdif_float64 *column_mins, sdif_float64 *column_maxes);
 								   
+
+/* SDIFbuf_GetColumnRange
+    Same thing, but for a given column instead of all the first n columns */							   
+SDIFresult SDIFbuf_GetColumnRange(SDIFbuf_Buffer b, const char *matrixType, sdif_int32 column, 
+								   sdif_float64 *min, sdif_float64 *max);

@@ -114,6 +114,8 @@ static char *error_string_array[] = {
     "Requested operation failed",
     "Unknown error",
     "Requested Stream ID not found",
+    "Bad column number",
+    "Bad row number",
     "Illegal error code"
 };
 
