@@ -390,7 +390,8 @@ void SDIF_Copy4Bytes(char *target, const char *string);
 
 #undef LITTLE_ENDIAN  /* OSX workaround 031218 */
 
-#if defined(__WIN32__) || defined(_WINDOWS) || defined(__LINUX__)
+// __LITTLE_ENDIAN__ flag is set by Xcode when building the Intel half of a UB external...
+#if defined(__WIN32__) || defined(_WINDOWS) || defined(__LINUX__) || defined(__LITTLE_ENDIAN__)
 #define LITTLE_ENDIAN  1
 #else 
     /* Insert other checks for your architecture here if it's little endian. */
