@@ -116,6 +116,7 @@ static char *error_string_array[] = {
     "Requested Stream ID not found",
     "Bad column number",
     "Bad row number",
+    "Frame size was -1 but I skipped the frame anyway",
     "Illegal error code"
 };
 
@@ -316,6 +317,20 @@ SDIFresult SDIF_SkipFrame(const SDIF_FrameHeader *head, FILE *f) {
     /* The header's size count includes the 8-byte time tag, 4-byte
        stream ID and 4-byte matrix count that we already read. */
     int bytesToSkip = head->size - 16;
+
+    if (head->size == -1) {
+      // Workaround for Sound Description IRCAM Format files
+      int i;
+      SDIF_MatrixHeader sm;
+      SDIFresult r;
+      for (i=0; i<head->matrixCount; ++i) {
+	r = SDIF_ReadMatrixHeader(&sm, f);
+	if (r != ESDIF_SUCCESS)  return r;
+	r = SkipBytes(f, SDIF_GetMatrixDataSize(&sm));
+	if (r != ESDIF_SUCCESS)  return r;
+      }
+      return ESDIF_MINUSONE_FRAMESIZE_WORKAROUND;
+    }
 
     if (bytesToSkip < 0) {
 	return ESDIF_BAD_FRAME_HEADER;

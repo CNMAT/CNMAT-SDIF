@@ -155,6 +155,7 @@ typedef enum {
     ESDIF_STREAM_NOT_FOUND=22,
     ESDIF_BAD_COLUMN_NUMBER=23,
     ESDIF_BAD_ROW_NUMEBR=24,
+    ESDIF_MINUSONE_FRAMESIZE_WORKAROUND=25,
     ESDIF_END_OF_SDIF_VALUES  /* Insert additional error values before here */
 } SDIFresult;
 

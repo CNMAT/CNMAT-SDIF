@@ -1029,8 +1029,8 @@ SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b,
   SDIFmem_Frame previous, current, first;
   SDIFresult r;
   sdif_int32 streamID;
-  
   SDIFbuf_BufferFriends bp = b->internal;
+  int complain_about_minusone_framesize = 0;
    
   //  deal with stream select mode
   if (mode == ESDIF_WHICH_STREAM_NUMBER) 
@@ -1063,13 +1063,17 @@ SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b,
       }
       previous = current;
     } else {
-		//  skip this frame
-		if ((r = SDIF_SkipFrame(&fh, f)) != ESDIF_SUCCESS) {
-			SDIF_CloseRead(f);
-			return r;
-		}
-     }
-   }
+      //  skip this frame
+      r = SDIF_SkipFrame(&fh, f);
+
+      if (r == ESDIF_MINUSONE_FRAMESIZE_WORKAROUND) {
+	complain_about_minusone_framesize = 1;
+      } else if (r != ESDIF_SUCCESS) {
+	SDIF_CloseRead(f);
+	return r;
+      }
+    }
+  }
 
   //  make sure we ended with normal EOF
   if (r != ESDIF_END_OF_DATA) {
@@ -1079,6 +1083,7 @@ SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b,
 
   //  close file  
   r = SDIF_CloseRead(f);
+  if (r!=ESDIF_SUCCESS) return r;
 
   // Make sure we got at least one frame from the desired stream
   if (first == NULL) {
@@ -1093,7 +1098,11 @@ SDIFresult SDIFbuf_ReadStreamFromOpenFile(SDIFbuf_Buffer b,
   bp->min_time = first->header.time;
   bp->max_time = current->header.time;
 
-  return r;
+  if (complain_about_minusone_framesize) {
+    return ESDIF_MINUSONE_FRAMESIZE_WORKAROUND;
+  } else {
+    return ESDIF_SUCCESS;
+  }
 }
 
 
