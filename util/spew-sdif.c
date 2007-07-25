@@ -39,6 +39,7 @@ University of California, Berkeley.
  3/30/2000: At IRCAM, fix for zero-matrix frames (Matt)
  6/1/2000: Support 16 bit ints
  6/5/2000: Fixed null-termination check bug
+ 7/25/07: Made robust in the case of Frame Size -1
 
 
  To-do:  Check frame's actual size (according to all the matrix headers) 
@@ -132,16 +133,20 @@ void SpewSDIF(char *filename) {
 	   frameCount, fh.frameType[0], fh.frameType[1], fh.frameType[2],
 	   fh.frameType[3], fh.size, fh.time, fh.streamID, fh.matrixCount);
 
-    if (fh.size < 16) {
-      fprintf(stderr, "%s: Frame size count %d too small for frame header\n",
-	      filename, fh.size);
-      goto close;
-    }
+    if (fh.size == -1) {
+      printf("*** Warning: frame size -1 is not really legal.\n");
+    } else {      
+      if (fh.size < 16) {
+	fprintf(stderr, "%s: Frame size count %d too small for frame header\n",
+		filename, fh.size);
+	goto close;
+      }
 
-    if ((fh.size & 7) != 0) {
-      fprintf(stderr, "%s: Frame size count %d is not a multiple of 8\n",
-	      filename, fh.size);
-      goto close;
+      if ((fh.size & 7) != 0) {
+	fprintf(stderr, "%s: Frame size count %d is not a multiple of 8\n",
+		filename, fh.size);
+	goto close;
+      }
     }
 
     if (IsNewId(fh.streamID)) {
