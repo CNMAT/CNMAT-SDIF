@@ -44,8 +44,17 @@ void SDIF2DF(char *filename, sdif_int32 streamID);
 int main(int argc, char *argv[]) {
   int i;
 
+  if (argc < 3) {
+    fprintf(stderr, "Usage: \n");
+    fprintf(stderr, "   %s foo.sdif streamID [bar.sdif stream ID...] \n",
+	    argv[0]);
+    return 1;
+  }
+
   /* Parse args */
-  for (i = 1; i < argc; i += 2) {
+  for (i = 1; i < argc-1; i += 2) {
+    fprintf(stderr, "Trying file %s stream ID %s\n", argv[i], argv[i+1]);
+
     SDIF2DF(argv[i], atoi(argv[i+1]));
   }
   return 0;
@@ -53,6 +62,7 @@ int main(int argc, char *argv[]) {
 
 
 void SDIF2DF(char *filename, sdif_int32 streamID) {
+  int goodFrameCount = 0;
   int frameCount;
   SDIF_FrameHeader fh;
   SDIF_MatrixHeader	mh;
@@ -66,12 +76,15 @@ void SDIF2DF(char *filename, sdif_int32 streamID) {
     fprintf(stderr, "Couldn't open %s: %s\n", filename, SDIF_GetErrorString(r));
     return;
   }
-
+  // printf("** Opened for reading\n");
 
   while (!(r = SDIF_ReadFrameHeader(&fh, f))) {
     int i;
 
     frameCount++;
+
+    //    printf("** read frame %d\n", frameCount);
+
     
     if (fh.size < 16) {
       fprintf(stderr, "%s: Frame size count %d too small for frame header\n",
@@ -154,6 +167,8 @@ void SDIF2DF(char *filename, sdif_int32 streamID) {
 	  SDIF_Read4(&pad,1,f);
       }
 
+      goodFrameCount++;
+
     }
   }
 	
@@ -165,4 +180,9 @@ void SDIF2DF(char *filename, sdif_int32 streamID) {
 
 close:
   SDIF_CloseRead(f);
+
+  if (goodFrameCount == 0) {
+    fprintf(stderr, "Warning: no frames found in %s streamID %d\n",
+	    filename, streamID);
+      }
 }
