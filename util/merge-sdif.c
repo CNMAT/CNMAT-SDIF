@@ -338,6 +338,7 @@ static sdif_int32 FindUnusedStreamID(sdif_int32 inStreamID) {
 	}
 	return try;
     tryagain:
+	break;
     }
 }
 
