@@ -1,4 +1,4 @@
-CFLAGS =
+CFLAGS = -dynamiclib
 
 ALL_O= sdif-buf.o sdif-interp-implem.o sdif-interp.o sdif-mem.o sdif-sinusoids.o sdif-types.o sdif-util.o sdif.o 
 

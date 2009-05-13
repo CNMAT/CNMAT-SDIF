@@ -456,15 +456,19 @@ SDIF_WriteMatrixData(FILE *f, const SDIF_MatrixHeader *head, void *data) {
     SDIFresult r;
 
 #ifdef LITTLE_ENDIAN
-    switch (datumSize) {
+    switch ((int)datumSize) {
         case 1:
             if (r = SDIF_Write1(data, numItems, f)) return r;
+	    break;
         case 2:
             if (r = SDIF_Write2(data, numItems, f)) return r;
+	    break;
         case 4:
             if (r = SDIF_Write4(data, numItems, f)) return r;
+	    break;
         case 8:
             if (r = SDIF_Write8(data, numItems, f)) return r;
+	    break;
         default:
             return ESDIF_BAD_MATRIX_DATA_TYPE;
     }
