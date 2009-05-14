@@ -32,6 +32,9 @@ sdif-mem.o: ../lib/sdif-mem.c ../lib/sdif-mem.h
 spew-sdif.o: spew-sdif.c ../lib/sdif.h
 	cc $(CFLAGS) -c spew-sdif.c
 
+.PHONY: clean
 clean:
 	rm -f *.o core *~ $(ALL)
 
+install: $(ALL)
+	cp $(ALL) /usr/local/bin/

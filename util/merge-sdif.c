@@ -61,11 +61,13 @@ int SDIFU_MergeHandles(FILE *outfp, int num_handles, FILE **handles);
 static void InitStreamRenumbering(void *(*MemoryAllocator)(int numBytes));
 static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID);
 
+int num_inputFiles;
+
 
 int
 main(int argc, char **argv) {
     SDIFresult r;
-    unsigned int i, num_inputfiles = 0;
+    unsigned int i;
     char *outfile = NULL;
     FILE *outfp = NULL;
     FILE **input_files = NULL;
@@ -86,9 +88,9 @@ main(int argc, char **argv) {
     }
 
     /* make sure that each input file can be opened. */
-    num_inputfiles = argc - 2;
-    input_files = (FILE **) malloc(num_inputfiles * sizeof(FILE *));
-    for (i=0; i < num_inputfiles; i++) {
+    num_inputFiles = argc - 2;
+    input_files = (FILE **) malloc(num_inputFiles * sizeof(FILE *));
+    for (i=0; i < num_inputFiles; i++) {
 	if (r = SDIF_OpenRead(argv[i+1], &(input_files[i]))) {
 	    fprintf(stderr, "%s: error opening \"%s\": %s.  Exiting...\n",
 		    argv[0], argv[i+1], SDIF_GetErrorString(r));
@@ -103,13 +105,13 @@ main(int argc, char **argv) {
 	return 1;
     }
 
-    printf("Merging %d SDIF files...\n", num_inputfiles);
+    printf("Merging %d SDIF files...\n", num_inputFiles);
 
 
     InitStreamRenumbering((void *(*)(int))malloc);
 
     /* do the merge. */
-    if (SDIFU_MergeHandles(outfp, num_inputfiles, input_files) != 1) {
+    if (SDIFU_MergeHandles(outfp, num_inputFiles, input_files) != 1) {
 	fprintf(stderr, "%s: something bad happened.\n", argv[0]);
     }
 
@@ -179,6 +181,7 @@ SDIFU_MergeHandles(FILE *outfp, int num_handles, FILE **handles) {
 
 	/* (Possibly) change the streamID */
 	headers[idx].streamID = chooseOutStreamID(idx, headers[idx].streamID);
+	printf("this one: %d\n", headers[idx].streamID);
 
 	/* Write this frame to the output with the new streamID. */
 
@@ -212,6 +215,42 @@ SDIFU_MergeHandles(FILE *outfp, int num_handles, FILE **handles) {
 }
 
 
+typedef struct {
+	int inStream[128];
+	int outStream[128];
+	int numStreams;
+} t_inputFile;
+
+t_inputFile *inputFiles;
+int positiveStreamCount, negativeStreamCount;
+
+static void InitStreamRenumbering(void *(*MemoryAllocator)(int numBytes)) {
+	// don't need the memory allocator--just there so we have the 
+	// same signature as the old functions
+	inputFiles = (t_inputFile *)malloc(num_inputFiles * sizeof(t_inputFile));
+	positiveStreamCount = negativeStreamCount = 0;
+	int i;
+	for(i = 0; i < num_inputFiles; i++){
+		inputFiles[i].numStreams = 0;
+	}
+}
+
+static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID){
+	t_inputFile *inFile = &(inputFiles[inFileIndex]);
+	int i;
+	for(i = 0; i < inFile->numStreams; i++){
+		if(inFile->inStream[i] == inStreamID){
+			printf("already seen this stream %d %d->%d\n", inFileIndex, inStreamID, inFile->outStream[i]);
+			return inFile->outStream[i];
+		}
+	}
+	inFile->inStream[inFile->numStreams] = inStreamID;
+	inFile->outStream[inFile->numStreams] = inStreamID < 0 ? --negativeStreamCount : ++positiveStreamCount;
+	printf("new stream: file num: %d, in: %d, out: %d,  num: %d\n", inFileIndex, inFile->inStream[inFile->numStreams], inFile->outStream[inFile->numStreams], inFile->numStreams + 1);
+
+	return inFile->outStream[inFile->numStreams++];
+}
+
 
 #ifdef EASY
 static void InitStreamRenumbering(void *(*MemoryAllocator)(int numBytes)) {
@@ -220,7 +259,7 @@ static void InitStreamRenumbering(void *(*MemoryAllocator)(int numBytes)) {
 static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID) {
     return inStreamID;
 }
-#else
+#elif HARD
 
 /* Data structure for renumbering Stream IDs (if necessary) when merging.
    Here's the strategy: we'll keep track of each stream in any of the input
@@ -274,7 +313,7 @@ static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID) {
     sdif_int32 newID;
     int hashBucket;
 
-    /* printf("* chooseOutStreamID(%ld, %ld): ", inFileIndex, inStreamID);*/
+    printf("* chooseOutStreamID(%ld, %ld): ", inFileIndex, inStreamID);
 
     
     hashBucket = hashFunction(inStreamID);
@@ -283,7 +322,7 @@ static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID) {
     for (p = inTable[hashBucket]; p!=NULL; p=p->nextIn) {
 	if (p->inStreamID == inStreamID && p->inFileIndex == inFileIndex) {
 	    /* We've seen this stream already */
-	    /* printf("already saw: %ld\n", p->outStreamID); */
+	    printf("already saw: %ld\n", p->outStreamID);
 	    return p->outStreamID;
 	}
     }
@@ -294,14 +333,14 @@ static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID) {
 	    /* Conflict! */
 	    newID = FindUnusedStreamID(inStreamID);
 	    DoubleInsert(inFileIndex, inStreamID, newID);
-	    /* printf("conflict! already saw %d/%d (assigned to %d); new ID %d\n", 
-		   p->inFileIndex, p->inStreamID, p->outStreamID, newID); */
+	    printf("conflict! already saw %d/%d (assigned to %d); new ID %d\n", 
+		   p->inFileIndex, p->inStreamID, p->outStreamID, newID);
 	    return newID;
 	}
     }
     /* We've never seen this stream, or any other with the same streamID */
     DoubleInsert(inFileIndex, inStreamID, inStreamID);
-    /* printf("no problem; use %ld\n", inStreamID); */
+    printf("no problem; use %ld\n", inStreamID);
     return inStreamID;
 }
 
@@ -332,6 +371,7 @@ static sdif_int32 FindUnusedStreamID(sdif_int32 inStreamID) {
 
     for (try = inStreamID + 1; 1; ++try) {
 	for (p = outTable[hashFunction(try)]; p != 0; p=p->nextOut) {
+		printf("\n\ninStreamID = %d, outStreamID = %d\n\n", try, p->outStreamID);
 	    if (p->outStreamID == try) {
 		goto tryagain;
 	    }
