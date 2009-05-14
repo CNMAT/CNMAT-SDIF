@@ -181,7 +181,7 @@ SDIFU_MergeHandles(FILE *outfp, int num_handles, FILE **handles) {
 
 	/* (Possibly) change the streamID */
 	headers[idx].streamID = chooseOutStreamID(idx, headers[idx].streamID);
-	printf("this one: %d\n", headers[idx].streamID);
+	//printf("this one: %d\n", headers[idx].streamID);
 
 	/* Write this frame to the output with the new streamID. */
 
@@ -240,13 +240,13 @@ static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID){
 	int i;
 	for(i = 0; i < inFile->numStreams; i++){
 		if(inFile->inStream[i] == inStreamID){
-			printf("already seen this stream %d %d->%d\n", inFileIndex, inStreamID, inFile->outStream[i]);
+			//printf("already seen this stream %d %d->%d\n", inFileIndex, inStreamID, inFile->outStream[i]);
 			return inFile->outStream[i];
 		}
 	}
 	inFile->inStream[inFile->numStreams] = inStreamID;
 	inFile->outStream[inFile->numStreams] = inStreamID < 0 ? --negativeStreamCount : ++positiveStreamCount;
-	printf("new stream: file num: %d, in: %d, out: %d,  num: %d\n", inFileIndex, inFile->inStream[inFile->numStreams], inFile->outStream[inFile->numStreams], inFile->numStreams + 1);
+	//printf("new stream: file num: %d, in: %d, out: %d,  num: %d\n", inFileIndex, inFile->inStream[inFile->numStreams], inFile->outStream[inFile->numStreams], inFile->numStreams + 1);
 
 	return inFile->outStream[inFile->numStreams++];
 }
@@ -313,7 +313,7 @@ static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID) {
     sdif_int32 newID;
     int hashBucket;
 
-    printf("* chooseOutStreamID(%ld, %ld): ", inFileIndex, inStreamID);
+    //printf("* chooseOutStreamID(%ld, %ld): ", inFileIndex, inStreamID);
 
     
     hashBucket = hashFunction(inStreamID);
@@ -322,7 +322,7 @@ static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID) {
     for (p = inTable[hashBucket]; p!=NULL; p=p->nextIn) {
 	if (p->inStreamID == inStreamID && p->inFileIndex == inFileIndex) {
 	    /* We've seen this stream already */
-	    printf("already saw: %ld\n", p->outStreamID);
+	    //printf("already saw: %ld\n", p->outStreamID);
 	    return p->outStreamID;
 	}
     }
@@ -333,14 +333,14 @@ static sdif_int32 chooseOutStreamID(int inFileIndex, sdif_int32 inStreamID) {
 	    /* Conflict! */
 	    newID = FindUnusedStreamID(inStreamID);
 	    DoubleInsert(inFileIndex, inStreamID, newID);
-	    printf("conflict! already saw %d/%d (assigned to %d); new ID %d\n", 
+	    //printf("conflict! already saw %d/%d (assigned to %d); new ID %d\n", 
 		   p->inFileIndex, p->inStreamID, p->outStreamID, newID);
 	    return newID;
 	}
     }
     /* We've never seen this stream, or any other with the same streamID */
     DoubleInsert(inFileIndex, inStreamID, inStreamID);
-    printf("no problem; use %ld\n", inStreamID);
+//printf("no problem; use %ld\n", inStreamID);
     return inStreamID;
 }
 
@@ -371,7 +371,7 @@ static sdif_int32 FindUnusedStreamID(sdif_int32 inStreamID) {
 
     for (try = inStreamID + 1; 1; ++try) {
 	for (p = outTable[hashFunction(try)]; p != 0; p=p->nextOut) {
-		printf("\n\ninStreamID = %d, outStreamID = %d\n\n", try, p->outStreamID);
+		//printf("\n\ninStreamID = %d, outStreamID = %d\n\n", try, p->outStreamID);
 	    if (p->outStreamID == try) {
 		goto tryagain;
 	    }
