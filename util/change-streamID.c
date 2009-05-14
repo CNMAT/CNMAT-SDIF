@@ -50,7 +50,6 @@ void DoCopy(FILE *inf, FILE *outf) {
     while ((r = SDIF_ReadFrameHeader(&fh, inf)) == ESDIF_SUCCESS) {
 	/* Here's where you'd look at fh.frameType and/or
 	   fh.streamID to decide what to do with the frame */
-	    fh.streamID = 666;
 
 	r = SDIF_WriteFrameHeader(&fh, outf);
 	if (r) {
