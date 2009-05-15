@@ -35,9 +35,10 @@ University of California, Berkeley.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include "sdif.h"
 
-void DoCopy(FILE *inf, FILE *outf) {
+void DoCopy(FILE *inf, FILE *outf, int oldStreamNum, int newStreamNum) {
     SDIF_FrameHeader fh;
     SDIF_MatrixHeader mh;
     SDIFresult r;
@@ -50,6 +51,9 @@ void DoCopy(FILE *inf, FILE *outf) {
     while ((r = SDIF_ReadFrameHeader(&fh, inf)) == ESDIF_SUCCESS) {
 	/* Here's where you'd look at fh.frameType and/or
 	   fh.streamID to decide what to do with the frame */
+	    if(fh.streamID == oldStreamNum){
+		    fh.streamID = newStreamNum;
+	    }
 
 	r = SDIF_WriteFrameHeader(&fh, outf);
 	if (r) {
@@ -106,11 +110,19 @@ void DoCopy(FILE *inf, FILE *outf) {
     }
 }
 
-void CopySDIF(char *inFileName, char *outFileName) {
+void CopySDIF(char *inFileName, char *oldStreamNum, char *newStreamNum) {
     FILE *inf, *outf;
     SDIFresult r;
+    char outFileName[256];
+    struct timeval tv;
+    int os, ns;
+    os = atoi(oldStreamNum);
+    ns = atoi(newStreamNum);
+    gettimeofday(&tv, NULL);
+    sprintf(outFileName, "%s.tmp%d", inFileName, tv.tv_usec);
+    //printf("%s %s %d %d", inFileName, outFileName, os, ns);
 
-    printf("CopySDIF %s %s\n", inFileName, outFileName);
+    //printf("CopySDIF %s %s\n", inFileName, outFileName);
 
     r = SDIF_OpenRead(inFileName, &inf);
     if (r) {
@@ -126,7 +138,7 @@ void CopySDIF(char *inFileName, char *outFileName) {
 	return;
     }
 
-    DoCopy(inf, outf);
+    DoCopy(inf, outf, os, ns);
 
     r = SDIF_CloseWrite(outf);
     if (r) {
@@ -141,18 +153,22 @@ void CopySDIF(char *inFileName, char *outFileName) {
                 inFileName, SDIF_GetErrorString(r));
         return;
     }
+
+    if(rename(outFileName, inFileName)){
+	    fprintf(stderr, "couldn't rename tmp file\n");
+    }
 }
 
 int main(int argc, char *argv[]) {
 
 
-    if (argc != 3) {
+    if (argc != 4) {
 	/* goto usage; */
 
-	fprintf(stderr, "Usage: %s input.sdif output.sdif\n", argv[0]);
+	fprintf(stderr, "Usage: %s input.sdif oldStreamNumber newStreamNumber\n", argv[0]);
 	exit(1);
     }
 
-    CopySDIF(argv[1], argv[2]);
+    CopySDIF(argv[1], argv[2], argv[3]);
     return 0;
 }

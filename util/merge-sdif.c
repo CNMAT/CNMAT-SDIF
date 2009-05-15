@@ -106,6 +106,7 @@ main(int argc, char **argv) {
     }
 
     printf("Merging %d SDIF files...\n", num_inputFiles);
+    fflush(stdout);
 
 
     InitStreamRenumbering((void *(*)(int))malloc);
