@@ -62,7 +62,7 @@ void DoCopy(FILE *inf, FILE *outf, int oldStreamNum, int newStreamNum) {
 	    return;
 	}
 
-	printf("* %d matrices\n", fh.matrixCount);
+	//printf("* %d matrices\n", fh.matrixCount);
 	for (i = 0; i < fh.matrixCount; ++i) {
 	    r=SDIF_ReadMatrixHeader(&mh, inf);
 	    if (r) {
@@ -79,7 +79,7 @@ void DoCopy(FILE *inf, FILE *outf, int oldStreamNum, int newStreamNum) {
 	    }
 
 	    size=SDIF_GetMatrixDataSize(&mh);
-	    printf("* Matrix size %d\n", size);
+	    //printf("* Matrix size %d\n", size);
 	    buffer = malloc(size);
 	    if (!buffer) {
 		fprintf(stderr, "Out of memory\n");
@@ -157,6 +157,7 @@ void CopySDIF(char *inFileName, char *oldStreamNum, char *newStreamNum) {
     if(rename(outFileName, inFileName)){
 	    fprintf(stderr, "couldn't rename tmp file\n");
     }
+
 }
 
 int main(int argc, char *argv[]) {
