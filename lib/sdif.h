@@ -91,8 +91,8 @@ Music and Audio Technologies, University of California, Berkeley.
 
     typedef unsigned short	sdif_unicode;
     typedef short		sdif_int16;
-    typedef long		sdif_int32;
-    typedef unsigned long	sdif_uint32;
+    typedef int		sdif_int32;
+    typedef unsigned int	sdif_uint32;
     typedef float		sdif_float32;
     typedef double		sdif_float64;
 
